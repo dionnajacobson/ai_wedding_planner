@@ -17,11 +17,11 @@ class TestBaseJinja(PromptDataAssertionTest):
 class TestWeddingPromptJinja(PromptDataAssertionTest):
     """Test the wedding prompt Jinja prompt."""
 
-    overwrite_test_data = False
+    overwrite_test_data = True
 
     def test_wedding_prompt_jinja_e2e(self):
         """Test the wedding prompt Jinja prompt."""
-        prompt = WeddingPromptJinja()
+        prompt = WeddingPromptJinja(query="What should we focus on first?")
         rendered = prompt.render()
 
         self.assert_test_data(rendered, "wedding_prompt")

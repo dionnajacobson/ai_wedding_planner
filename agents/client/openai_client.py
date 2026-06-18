@@ -21,16 +21,19 @@ class OpenAIClient(LLMClient):
         self,
         *,
         input: LLMPromptInput,
+        history: list[tuple[str, str]],
         max_tokens: int = 1024,
     ) -> LLMResponse:
-        """Send a system prompt and user message; return the assistant reply."""
+        """Send system prompt, prior messages, and a new user turn."""
+        messages: list[dict[str, str]] = [{"role": "system", "content": input.system}]
+        for role, content in history:
+            messages.append({"role": role, "content": content})
+        messages.append({"role": "user", "content": input.user})
+
         response = self._client.chat.completions.create(
             model=self.model,
             max_tokens=max_tokens,
-            messages=[
-                {"role": "system", "content": input.system},
-                {"role": "user", "content": input.user},
-            ],
+            messages=messages,
         )
         text = response.choices[0].message.content or ""
         response = LLMResponse(text=text, model=self.model, provider="openai")
