@@ -3,7 +3,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, Template
 
 
-JINJA_PROMPTS_DIR = Path("prompts", "templates")
+JINJA_PROMPTS_DIR = Path(__file__).parent / "templates"
 
 class Prompt(ABC):
     """Render prompts for an LLM."""

@@ -1,4 +1,4 @@
-from prompts.base import JinjaPrompt
+from agents.prompts.base import JinjaPrompt
 
 class BaseJinjaPrompt(JinjaPrompt):
     """Base Jinja prompt."""

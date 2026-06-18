@@ -17,4 +17,4 @@ dev = [
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["tests", "prompts/tests"]
+# Omit testpaths — pytest discovers test_*.py files anywhere under the project root.

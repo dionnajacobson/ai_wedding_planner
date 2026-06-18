@@ -12,15 +12,16 @@ At a high level, the project has two main pieces:
 ```
 ai_wedding_planner/
 ├── client.py                 # MCP client entry point
-├── prompts/
-│   ├── base.py               # Prompt ABC and JinjaPrompt renderer
-│   ├── prompts.py            # Concrete prompt classes (base, wedding)
-│   ├── templates/            # Jinja templates
-│   │   ├── base.jinja
-│   │   └── wedding_prompt.jinja
-│   └── tests/                # Prompt snapshot tests
-│       ├── test_prompts.py
-│       └── data/             # Expected rendered output
+├── agents/
+│   └── prompts/
+│       ├── base.py           # Prompt ABC and JinjaPrompt renderer
+│       ├── prompts.py        # Concrete prompt classes (base, wedding)
+│       ├── templates/        # Jinja templates
+│       │   ├── base.jinja
+│       │   └── wedding_prompt.jinja
+│       └── tests/            # Prompt snapshot tests
+│           ├── test_prompts.py
+│           └── data/         # Expected rendered output
 └── tests/
     └── base.py               # Shared test helpers (snapshot assertions)
 ```
@@ -52,12 +53,12 @@ uv run python client.py
 Try rendering a prompt directly (fully working today):
 
 ```bash
-uv run python -c "from prompts.prompts import WeddingPromptJinja; print(WeddingPromptJinja().render())"
+uv run python -c "from agents.prompts.prompts import WeddingPromptJinja; print(WeddingPromptJinja().render())"
 ```
 
 ## Running tests
 
-Run the full test suite:
+Run the full test suite (pytest discovers all `test_*.py` files under the project root automatically):
 
 ```bash
 uv run pytest
@@ -72,13 +73,13 @@ uv run pytest -v
 Run a single test file:
 
 ```bash
-uv run pytest prompts/tests/test_prompts.py
+uv run pytest agents/prompts/tests/test_prompts.py
 ```
 
 Run a single test by name:
 
 ```bash
-uv run pytest prompts/tests/test_prompts.py::TestWeddingPromptJinja::test_wedding_prompt_jinja_e2e
+uv run pytest agents/prompts/tests/test_prompts.py::TestWeddingPromptJinja::test_wedding_prompt_jinja_e2e
 ```
 
 Filter tests by keyword:
@@ -89,10 +90,10 @@ uv run pytest -k wedding -v
 
 ### Snapshot tests
 
-Prompt tests compare rendered output against files in `prompts/tests/data/`. To regenerate snapshots after changing a template, temporarily set `overwrite_test_data = True` on the test class, run pytest, then set it back to `False`.
+Prompt tests compare rendered output against files in `agents/prompts/tests/data/`. To regenerate snapshots after changing a template, temporarily set `overwrite_test_data = True` on the test class, run pytest, then set it back to `False`.
 
 ## Adding a new prompt
 
-1. Create a template in `prompts/templates/` that extends `base.jinja` and overrides the `system` and `user` blocks.
-2. Add a subclass in `prompts/prompts.py` with `template_name` and optional `_get_system_context()` / `_get_user_context()` methods.
-3. Add a snapshot test in `prompts/tests/test_prompts.py`.
+1. Create a template in `agents/prompts/templates/` that extends `base.jinja` and overrides the `system` and `user` blocks.
+2. Add a subclass in `agents/prompts/prompts.py` with `template_name` and optional context in `__init__`.
+3. Add a snapshot test in any `tests/test_*.py` file — pytest will pick it up automatically.

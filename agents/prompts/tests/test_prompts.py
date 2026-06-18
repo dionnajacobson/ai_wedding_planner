@@ -1,5 +1,5 @@
 from tests.base import BaseDataAssertionTest
-from prompts.prompts import BaseJinjaPrompt, WeddingPromptJinja
+from agents.prompts.prompts import BaseJinjaPrompt, WeddingPromptJinja
 
 class TestBaseJinja(BaseDataAssertionTest):
     """Test the base Jinja prompt."""
