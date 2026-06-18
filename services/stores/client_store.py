@@ -1,6 +1,6 @@
 import uuid
 
-from ai_wedding_planner.db.database import SessionLocal
+from db.database import SessionLocal
 from sqlalchemy.orm import Session
 
 from db import models as db

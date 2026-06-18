@@ -2,7 +2,6 @@ import uuid
 
 from agents.client.openai_client import OpenAIClient
 from agents.prompts.prompts import WeddingPromptJinja
-from agents.prompts.types import LLMPromptInput
 from services.types import Message
 from services.wedding_service import WeddingService
 from services.types import MessageRole
