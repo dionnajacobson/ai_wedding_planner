@@ -11,11 +11,11 @@ class WeddingPromptJinja(JinjaPrompt):
 
     template_name = "wedding_prompt.jinja"
 
-    def _get_system_context(self) -> dict:
-        """Get the system context for the wedding prompt Jinja prompt."""
-        context = {
-            "couple_names": "Unknown",
-            "wedding_date": "Unknown",
-            "budget": "Unknown",
+    def __init__(self,  budget: str = "Unknown", couple_names: str = "Unknown", wedding_date: str = "Unknown"):
+        """Initialize the wedding prompt Jinja prompt."""
+        system_context = {
+            "couple_names": couple_names,
+            "wedding_date": wedding_date,
+            "budget": budget,
         }
-        return context
+        super().__init__(system_context=system_context)
