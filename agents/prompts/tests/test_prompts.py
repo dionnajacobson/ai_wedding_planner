@@ -1,7 +1,7 @@
-from tests.base import BaseDataAssertionTest
+from tests.base import PromptDataAssertionTest
 from agents.prompts.prompts import BaseJinjaPrompt, WeddingPromptJinja
 
-class TestBaseJinja(BaseDataAssertionTest):
+class TestBaseJinja(PromptDataAssertionTest):
     """Test the base Jinja prompt."""
 
     overwrite_test_data = False
@@ -14,7 +14,7 @@ class TestBaseJinja(BaseDataAssertionTest):
         self.assert_test_data(rendered, "base_prompt")
         
 
-class TestWeddingPromptJinja(BaseDataAssertionTest):
+class TestWeddingPromptJinja(PromptDataAssertionTest):
     """Test the wedding prompt Jinja prompt."""
 
     overwrite_test_data = False

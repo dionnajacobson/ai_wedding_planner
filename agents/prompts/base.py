@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, Template
+from .types import LLMPromptInput
 
 
 JINJA_PROMPTS_DIR = Path(__file__).parent / "templates"
@@ -9,7 +10,7 @@ class Prompt(ABC):
     """Render prompts for an LLM."""
 
     @abstractmethod
-    def render(self, **context) -> str:
+    def render(self, **context) -> LLMPromptInput:
         """Render a stored template into a prompt string."""
         pass
 
@@ -24,14 +25,14 @@ class JinjaPrompt(Prompt):
         self.system_context = system_context or {}
         self.user_context = user_context or {}
 
-    def render(self) -> str:
+    def render(self) -> LLMPromptInput:
         """Render system and user blocks into a single prompt string."""
         # Each template defines {% block system %} and {% block user %} in base.jinja.
         # Child templates (e.g. wedding_prompt.jinja) override those blocks via {% extends %}.
         template = self._load_template()
         system = self._render_block("system", self.system_context, template)
         user = self._render_block("user", self.user_context, template)
-        prompt = f"{system}\n\n{user}"
+        prompt = LLMPromptInput(system=system, user=user)
         return prompt
 
     def _load_template(self) -> Template:

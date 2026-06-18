@@ -1,6 +1,11 @@
 import inspect
 import json
 from pathlib import Path
+from typing import Union
+from pydantic import BaseModel
+from agents.prompts.types import LLMPromptInput
+
+DATA_TYPES = Union[dict, str, BaseModel]
 
 
 class BaseDataAssertionTest:
@@ -9,7 +14,7 @@ class BaseDataAssertionTest:
     # Set to True on a subclass to overwrite existing files in tests/data/
     overwrite_test_data: bool = False
 
-    def assert_test_data(self, data: dict | str, file_name: str) -> dict | str:
+    def assert_test_data(self, data: DATA_TYPES, file_name: str) -> DATA_TYPES:
         """
         Compare against saved test data, or create it on first run.
         Files are stored in ``data/`` next to the calling test module.
@@ -20,33 +25,59 @@ class BaseDataAssertionTest:
         test_data_dir = caller_dir / "data"
         test_data_dir.mkdir(parents=True, exist_ok=True)
 
-        if isinstance(data, dict):
-            file_path = test_data_dir / f"{file_name}.json"
-        elif isinstance(data, str):
-            file_path = test_data_dir / f"{file_name}.txt"
-        else:
-            raise ValueError(f"Invalid data type: {type(data)}")
+        file_path = test_data_dir / self._snapshot_filename(data, file_name)
+        expected = self._serialize(data)
 
         if self.overwrite_test_data or not file_path.exists():
-            self._write_test_data(file_path, data)
+            file_path.write_text(expected, encoding="utf-8")
 
-        saved_data = self._read_test_data(file_path, type(data))
-        assert saved_data == data
+        saved = file_path.read_text(encoding="utf-8")
+        assert saved == expected, (
+            f"Snapshot mismatch for {file_path.name}. "
+            "Set overwrite_test_data = True to regenerate."
+        )
         return data
-        
-    @staticmethod
-    def _read_test_data(file_path: Path, data_type: type) -> dict | str:
-        """Read the test data from a file."""
-        data = file_path.read_text(encoding="utf-8")
-        if data_type is dict:
-            data = json.loads(data)
-        return data    
 
-    @staticmethod
-    def _write_test_data(file_path: Path, data: dict | str) -> None:
-        """Write the test data to a file."""
+    def _snapshot_filename(self, data: DATA_TYPES, file_name: str) -> str:
+        """Return the snapshot file name for a given data type."""
+        if isinstance(data, str):
+            return f"{file_name}.txt"
+        if isinstance(data, dict | BaseModel):
+            return f"{file_name}.json"
+        raise ValueError(f"Unsupported data type: {type(data)}")
+
+    def _serialize(self, data: DATA_TYPES) -> str:
+        """Convert test data to the string stored in snapshot files."""
+        if isinstance(data, str):
+            return data
         if isinstance(data, dict):
-            file_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
-        else:
-            file_path.write_text(data, encoding="utf-8")
+            return json.dumps(data, indent=2)
+        if isinstance(data, BaseModel):
+            return data.model_dump_json(indent=2)
+        raise ValueError(f"Unsupported data type: {type(data)}")
 
+
+class PromptDataAssertionTest(BaseDataAssertionTest):
+    """Base class for prompt tests."""
+
+    def _snapshot_filename(self, data: DATA_TYPES, file_name: str) -> str:
+        """Return the snapshot file name for a given data type."""
+        if isinstance(data, LLMPromptInput):
+            file_name = f"{file_name}.txt"
+            return file_name
+        filename = super()._snapshot_filename(data, file_name)
+        return filename
+
+    def _serialize(self, data: DATA_TYPES) -> str:
+        """Convert test data to the string stored in snapshot files."""
+        if isinstance(data, LLMPromptInput):
+            serialized = self._format_llm_prompt_input(data)
+            return serialized
+        serialized = super()._serialize(data)
+        return serialized
+
+    @staticmethod
+    def _format_llm_prompt_input(data) -> str:
+        """Format the LLMPromptInput as a string."""
+        formatted = f"{data.system}\n\n{data.user}"
+        return formatted
