@@ -17,7 +17,7 @@ class OpenAIClient(LLMClient):
         self.api_key = os.getenv("OPENAI_API_KEY")
         self._client = client or OpenAI(api_key=self.api_key)
 
-    def complete(
+    def invoke(
         self,
         *,
         input: LLMPromptInput,

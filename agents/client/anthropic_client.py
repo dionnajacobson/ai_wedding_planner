@@ -16,7 +16,7 @@ class AnthropicClient(LLMClient):
         self.model = model
         self._client = client or Anthropic(api_key=self.api_key)
 
-    def complete(
+    def invoke(
         self,
         *,
         input: LLMPromptInput,
