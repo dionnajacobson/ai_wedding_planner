@@ -1,10 +1,10 @@
 {# Base template for all LLM prompts. Extend this and override the blocks below. #}
-<<<SYSTEM>>>
+{# JinjaPrompt.render() renders each block separately — no delimiter markers needed. #}
 {% block system %}
 You are a helpful AI assistant.
 Follow the instructions carefully and be concise unless asked otherwise.
 {% endblock %}
-<<<USER>>>
+
 {% block user %}
 {# Override with the user's request or task #}
 {% endblock %}
