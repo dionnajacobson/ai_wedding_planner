@@ -3,9 +3,9 @@ from unittest.mock import Mock
 
 from services.client_service import ClientService
 from services.message_service import MessageService
-from services.tests.mock_data import mock_client, mock_message, mock_wedding
 from services.types import MessageRole
 from services.wedding_service import WeddingService
+from tests.services.mock_data import mock_client, mock_message, mock_wedding
 
 
 class TestServiceFlowE2E:

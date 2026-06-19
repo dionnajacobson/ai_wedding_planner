@@ -2,7 +2,7 @@ from typing import Any
 from unittest.mock import Mock
 
 from services.client_service import ClientService
-from services.tests.mock_data import mock_client, mock_wedding
+from tests.services.mock_data import mock_client, mock_wedding
 
 
 class TestClientService:

@@ -4,8 +4,8 @@ from unittest.mock import Mock
 import pytest
 
 from services.client_service import ClientService
-from services.tests.mock_data import CLIENT_ID, SESSION_ID, mock_client, mock_wedding
 from services.wedding_service import WeddingService
+from tests.services.mock_data import CLIENT_ID, SESSION_ID, mock_client, mock_wedding
 
 
 class TestWeddingService:

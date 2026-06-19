@@ -2,8 +2,8 @@ from typing import Any
 from unittest.mock import Mock
 
 from services.message_service import MessageService
-from services.tests.mock_data import SESSION_ID, mock_message
 from services.types import MessageRole
+from tests.services.mock_data import SESSION_ID, mock_message
 
 
 class TestMessageService:

@@ -1,7 +1,8 @@
-from tests.base import PromptDataAssertionTest
 from agents.prompts.prompts import BaseJinjaPrompt, WeddingPromptJinja
-from services.tests.mock_data import mock_message
 from services.types import MessageRole
+from tests.base import PromptDataAssertionTest
+from tests.services.mock_data import mock_message
+
 
 class TestBaseJinja(PromptDataAssertionTest):
     """Test the base Jinja prompt."""
