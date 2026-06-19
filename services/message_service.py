@@ -32,3 +32,8 @@ class MessageService:
             session_id=session_id,
         )
         return message
+
+    def get_messages(self, session_id: uuid.UUID) -> list[Message]:
+        """Get all messages for a session."""
+        messages = self._store.get_messages(session_id=session_id)
+        return messages

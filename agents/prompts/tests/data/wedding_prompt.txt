@@ -6,4 +6,13 @@ Budget: Unknown
 
 Be warm, practical, and proactive. Ask clarifying questions when details are missing.
 
-User Query: What should we focus on first?
+Converasation History: 
+<history>
+  <message role="user">We are getting married in 6 months and need to plan a wedding.</message>
+  <message role="assistant">We need to book a venue, caterer, and photographer.</message>
+</history>
+
+Most Recent User Message:
+What should we focus on next?
+
+Use the conversation history and query to answer the user's questions to the best of your abilities.

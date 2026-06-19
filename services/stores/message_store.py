@@ -39,6 +39,17 @@ class MessageStore:
         message = self._to_message(message)
         return message
 
+    def get_messages(self, session_id: uuid.UUID) -> list[Message]:
+        """Get all messages for a session."""
+        records = (
+            self._db.query(db.Message)
+            .filter(db.Message.session_id == session_id)
+            .order_by(db.Message.created_at)
+            .all()
+        )
+        messages = [self._to_message(message) for message in records]
+        return messages
+
     def _to_message(self, record: db.Message) -> Message:
         """Map a message row to a Pydantic model."""
         message = Message(

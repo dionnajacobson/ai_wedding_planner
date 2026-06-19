@@ -41,17 +41,21 @@ class WeddingAgent:
         max_tokens: int = 1024,
     ) -> Message:
         """Chat with the wedding agent."""
-        prompt = WeddingPromptJinja(query=query)
+
+        messages = self._message_service.get_messages(session_id)
+        prompt = WeddingPromptJinja(messages=messages, query=query)
         rendered_prompt = prompt.render()
 
+        response = self._client.invoke(
+            input=rendered_prompt,
+            max_tokens=max_tokens,
+        )
+
+        # Record the user message
         self._message_service.create_message(
             session_id,
             message_content=query,
             message_role=MessageRole.USER,
-        )
-        response = self._client.invoke(
-            input=rendered_prompt,
-            max_tokens=max_tokens,
         )
         message = self._message_service.create_message(
             session_id,

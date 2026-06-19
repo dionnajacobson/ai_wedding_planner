@@ -1,0 +1,39 @@
+---
+alwaysApply: true
+---
+
+# Principles
+
+- DRY: Don't Repeat Yourself.
+
+# Data Models
+
+- Always use Pydantic over Dataclasses.
+- Attributes in data models should be alphabetized.
+- Only define the parameters that are absolutely necessary for the implementation. The others can be added later.
+
+# Comments
+
+- Don't explain WHAT code does, explain WHY we do it that way. If you don't know, don't comment.
+- Attributes comments should go above with a hash (e.g. # This is a comment)
+
+# Functions
+
+- Always add docstrings to functions and classes
+- Always return named variables from functions. E.g. "return value" instead of "return data[key].item"
+- Functions and class methods should be alphabetized in files, starting with public at the top then private (e.g. "_") at the bottom
+- Input arguments should be alphabetized.
+
+# Tests
+
+- Structure tests in three sections: # ARRANGE, # ACT, # ASSERT
+- Only add tests that meaningfully add test coverage; don't add tests for functions that don't do anything or just to check that a class variable is set.
+- Mock as little as possible in order to keep things terse. Prefer not assigning an attribute or functionality to a mock if possible.
+- You can run tests in Python like "./scripts/run_test.sh --disable-debugger skylink_bookings.test_booking_engine"
+- Don't accept linting errors in test cases.
+
+# Other
+
+- Constants should only be added if they're used multiple times. It's more readable to write strings in-line, where they are used.
+
+@dionna-rules
