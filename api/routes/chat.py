@@ -17,9 +17,8 @@ router = APIRouter(tags=["chat"])
 
 
 @router.post("/api/chat/start", response_model=StartChatResponse, status_code=201)
-def start_chat(body: StartChatRequest | None = None) -> StartChatResponse:
+def start_chat(body: StartChatRequest) -> StartChatResponse:
     """Create a client, wedding, and chat session."""
-    body = body or StartChatRequest()
     wedding_service = WeddingService.default()
     client = wedding_service.onboard_client(
         email=body.email,

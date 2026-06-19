@@ -19,11 +19,62 @@
         <p class="eyebrow">Your planning companion</p>
         <h1>Wedding Planner</h1>
         <p class="subtitle">
-          Ask about timelines, vendors, budgets, and guest lists. Every reply is saved to your session.
+          Your AI planning agent for timelines, vendors, and next steps. Every reply is saved to your session.
         </p>
       </header>
 
-      <section class="chat-panel" aria-label="Chat">
+      <section id="onboarding-panel" class="onboarding-panel" aria-label="Get started">
+        <form id="onboarding-form" class="onboarding-form" autocomplete="on">
+          <p class="onboarding-copy">
+            Enter your details to start a planning session. Share wedding details in the chat as you go.
+          </p>
+          <div class="field-row">
+            <div class="field">
+              <label for="first-name-input">First name</label>
+              <input
+                id="first-name-input"
+                name="first_name"
+                type="text"
+                required
+                autocomplete="given-name"
+                placeholder="Alex"
+              />
+            </div>
+            <div class="field">
+              <label for="last-name-input">Last name</label>
+              <input
+                id="last-name-input"
+                name="last_name"
+                type="text"
+                required
+                autocomplete="family-name"
+                placeholder="Smith"
+              />
+            </div>
+          </div>
+          <div class="field">
+            <label for="email-input">Email</label>
+            <input
+              id="email-input"
+              name="email"
+              type="email"
+              required
+              autocomplete="email"
+              placeholder="alex@example.com"
+            />
+          </div>
+          <p id="onboarding-error" class="onboarding-error" hidden></p>
+          <button type="submit" id="start-button">Start planning</button>
+        </form>
+      </section>
+
+      <section id="chat-panel" class="chat-panel" aria-label="Chat" hidden>
+        <div class="chat-toolbar">
+          <p id="welcome-text" class="welcome-text"></p>
+          <button type="button" id="new-session-button" class="text-button">
+            New session
+          </button>
+        </div>
         <div id="messages" class="messages" role="log" aria-live="polite"></div>
 
         <div id="status" class="status" hidden>
@@ -36,7 +87,7 @@
           <textarea
             id="message-input"
             rows="1"
-            placeholder="Ask about venues, timelines, or your guest list…"
+            placeholder="Ask about venues, timelines, vendors, or what to tackle next…"
             disabled
           ></textarea>
           <button type="submit" id="send-button" disabled aria-label="Send message">

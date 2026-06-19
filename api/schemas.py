@@ -6,11 +6,11 @@ from services.types import Message
 
 
 class StartChatRequest(BaseModel):
-    """Optional client details used when creating a new chat session."""
+    """Client details used when creating a new chat session."""
 
-    first_name: str = Field(default="Guest", examples=["Alex"])
-    last_name: str = Field(default="User", examples=["Smith"])
-    email: str = Field(default="unknown@example.com", examples=["alex@example.com"])
+    first_name: str = Field(examples=["Alex"])
+    last_name: str = Field(examples=["Smith"])
+    email: str = Field(examples=["alex@example.com"])
 
 
 class StartChatResponse(BaseModel):

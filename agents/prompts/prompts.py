@@ -5,7 +5,7 @@ from services.types import Message
 
 
 def format_history_as_xml(messages: list[Message]) -> str:
-    """F
+    """
     Format session messages as XML for the prompt.
     TODO: Make History Service
     """
@@ -37,14 +37,8 @@ class WeddingPromptJinja(JinjaPrompt):
     ):
         """Initialize the wedding prompt Jinja prompt."""
         history = format_history_as_xml(messages or [])
-        system_context = {
-            "budget": "Unknown",
-            "couple_names": "Unknown",
-            "guest_count": "Unknown",
-            "wedding_date": "Unknown",
-        }
         user_context = {
             "history": history,
             "query": query,
         }
-        super().__init__(system_context=system_context, user_context=user_context)
+        super().__init__(user_context=user_context)

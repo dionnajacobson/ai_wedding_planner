@@ -57,7 +57,7 @@ docker compose up -d
 uv run uvicorn api.main:app --reload
 ```
 
-Open **http://127.0.0.1:8000** to chat. The UI creates a session automatically and stores the session id in browser local storage so refreshes keep the conversation.
+Open **http://127.0.0.1:8000** to chat. Enter your name and email to start, then share wedding details in the conversation. The UI saves your session in browser local storage so refreshes keep the conversation.
 
 API docs: **http://127.0.0.1:8000/docs**
 
