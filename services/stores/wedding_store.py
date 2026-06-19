@@ -54,7 +54,7 @@ class WeddingStore:
         """Load a wedding by client id, including linked clients."""
         record = (
             self._db.query(db.Wedding)
-            .options(selectinload(db.Wedding.clients))
+            .options(selectinload(db.Wedding.sessions))
             .filter(db.Wedding.client_id == client_id)
             .one_or_none()
         )
@@ -65,7 +65,7 @@ class WeddingStore:
 
     def _to_wedding(self, record: db.Wedding) -> Wedding:
         """Map a wedding row to a Pydantic model."""
-        client = self._client_store.get_client(record.client_id)
+        client = self._client_store.get_client(client_id=record.client_id)
         session_ids = [session.id for session in record.sessions]
         wedding = Wedding(
             client=client,

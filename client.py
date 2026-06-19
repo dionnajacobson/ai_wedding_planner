@@ -1,50 +1,44 @@
 import argparse
 
+from agents.wedding_agent import WeddingAgent
 from db.database import init_db
 from services.wedding_service import WeddingService
-from agents.wedding_agent import WeddingAgent
 
-from db.database import SessionLocal
 
 def run_query_loop(
     *,
+    email: str = "unknown@example.com",
     first_name: str,
     last_name: str = "Jacobson",
-    email: str = "unknown@example.com",
 ) -> None:
     """Run an interactive wedding planning chat using OpenAI and PostgreSQL."""
     init_db()
     wedding_service = WeddingService.default()
     agent = WeddingAgent.default()
 
-    try:
-        client = wedding_service.onboard_client(
-            email=email,
-            first_name=first_name,
-            last_name=last_name,
-        )
-        session_id = wedding_service.create_session(client_id=client.id)
+    client = wedding_service.onboard_client(
+        email=email,
+        first_name=first_name,
+        last_name=last_name,
+    )
+    session_id = wedding_service.create_session(client_id=client.id)
 
-        print("Wedding Planner AI (OpenAI + PostgreSQL)")
-        print(f"Client ID: {client.id}")
-        print(f"Wedding ID: {client.wedding_id}")
-        print(f"Session ID: {session_id}")
-        print("Ask planning questions. Type 'quit' or 'exit' to stop.\n")
+    print("Wedding Planner AI (OpenAI + PostgreSQL)")
+    print(f"Client ID: {client.id}")
+    print(f"Wedding ID: {client.wedding_id}")
+    print(f"Session ID: {session_id}")
+    print("Ask planning questions. Type 'quit' or 'exit' to stop.\n")
 
-        while True:
-            query = input("You: ").strip()
-            if not query:
-                continue
-            if query.lower() in {"quit", "exit"}:
-                print("Goodbye!")
-                break
-                
-            response = agent.chat(
-                user_message=query,
-            )
-            print(f"\nAssistant: {response.text}\n")
-    finally:
-        SessionLocal.close()
+    while True:
+        query = input("You: ").strip()
+        if not query:
+            continue
+        if query.lower() in {"quit", "exit"}:
+            print("Goodbye!")
+            break
+
+        message = agent.chat(query, session_id)
+        print(f"\nAssistant: {message.content}\n")
 
 
 def main() -> None:

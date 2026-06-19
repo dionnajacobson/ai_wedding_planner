@@ -19,25 +19,25 @@ class Base(DeclarativeBase):
 
 
 class Client(Base):
-    """Couple member, planner, or admin using the wedding assistant."""
+    """Couple member using the wedding assistant."""
 
-    __tablename__ = "users"
+    __tablename__ = "clients"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
     first_name: Mapped[str] = mapped_column(String(255), nullable=False)
     last_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    email: Mapped[str] = mapped_column(String(255), nullable=False)
-    wedding_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("weddings.id"), nullable=True
-    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    wedding: Mapped["Wedding | None"] = relationship(back_populates="clients")
-    sessions: Mapped[list["WeddingSession"]] = relationship(back_populates="user")
+    sessions: Mapped[list["WeddingSession"]] = relationship(back_populates="client")
+    wedding: Mapped["Wedding | None"] = relationship(
+        back_populates="client",
+        uselist=False,
+    )
 
 
 class Wedding(Base):
@@ -47,6 +47,9 @@ class Wedding(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    client_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("clients.id"), nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -70,11 +73,11 @@ class WeddingSession(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    wedding_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("weddings.id"), nullable=False
-    )
     client_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("clients.id"), nullable=False
+    )
+    wedding_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("weddings.id"), nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -86,13 +89,13 @@ class WeddingSession(Base):
         nullable=False,
     )
 
-    wedding: Mapped[Wedding] = relationship(back_populates="sessions")
     client: Mapped[Client] = relationship(back_populates="sessions")
     messages: Mapped[list["Message"]] = relationship(
         back_populates="session",
-        order_by="Message.created_at",
         cascade="all, delete-orphan",
+        order_by="Message.created_at",
     )
+    wedding: Mapped[Wedding] = relationship(back_populates="sessions")
 
 
 class Message(Base):
@@ -103,13 +106,13 @@ class Message(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    session_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("wedding_sessions.id"), nullable=False
-    )
+    content: Mapped[str] = mapped_column(Text, nullable=False)
     role: Mapped[MessageRole] = mapped_column(
         SAEnum(MessageRole, native_enum=False), nullable=False
     )
-    content: Mapped[str] = mapped_column(Text, nullable=False)
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("wedding_sessions.id"), nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

@@ -26,14 +26,12 @@ class ClientStore:
         email: str,
         first_name: str,
         last_name: str,
-        wedding_id: uuid.UUID | None = None,
     ) -> Client:
         """Insert a client and return the persisted record."""
         record = db.Client(
             email=email,
             first_name=first_name,
             last_name=last_name,
-            wedding_id=wedding_id,
         )
         self._db.add(record)
         self._db.commit()
@@ -56,11 +54,12 @@ class ClientStore:
 
     def _to_client(self, record: db.Client) -> Client:
         """Map a client row to a Pydantic model."""
+        wedding_id = record.wedding.id if record.wedding else None
         client = Client(
             email=record.email,
             first_name=record.first_name,
             id=record.id,
             last_name=record.last_name,
-            wedding_id=record.wedding_id,
+            wedding_id=wedding_id,
         )
         return client
