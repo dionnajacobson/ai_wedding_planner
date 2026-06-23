@@ -40,7 +40,9 @@ def send_message(body: ChatRequest) -> ChatResponse:
             max_tokens=body.max_tokens,
         )
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        if "Wedding not found" in str(exc):
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     return ChatResponse(session_id=body.session_id, message=message)
 

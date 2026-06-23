@@ -48,8 +48,8 @@ class WeddingAgent:
         rendered_prompt = prompt.render()
 
         request = LLMRequest(
-            system=rendered_prompt,
-            user=query,
+            system=rendered_prompt.system,
+            user=rendered_prompt.user,
             model=Model.GPT_4O_MINI_2024_07_18,
             max_tokens=max_tokens,
         )
