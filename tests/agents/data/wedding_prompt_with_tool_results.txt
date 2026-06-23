@@ -21,6 +21,14 @@ Conversation history:
 </history>
 
 Latest message:
-What should we focus on next?
+What are average venue costs in Austin?
+
+
+Tool results from this turn:
+<tool_results>
+  <result tool_call_id="call_1">Average Austin venue cost is $8,000.</result>
+</tool_results>
+
+Use these tool results to answer the latest message. Do not treat them as conversation history.
 
 Respond as the wedding planning agent.

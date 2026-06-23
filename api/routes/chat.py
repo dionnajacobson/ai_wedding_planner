@@ -31,11 +31,11 @@ def start_chat(body: StartChatRequest) -> StartChatResponse:
 
 
 @router.post("/api/chat", response_model=ChatResponse)
-def send_message(body: ChatRequest) -> ChatResponse:
+async def send_message(body: ChatRequest) -> ChatResponse:
     """Send a message and receive the assistant reply."""
     agent = WeddingAgent.default()
     try:
-        message = agent.chat(
+        message = await agent.chat(
             query=body.message,
             session_id=body.session_id,
             max_tokens=body.max_tokens,

@@ -1,11 +1,12 @@
 import argparse
+import asyncio
 
 from agents.wedding_agent import WeddingAgent
 from db.database import init_db
 from services.wedding_service import WeddingService
 
 
-def run_query_loop(
+async def run_query_loop(
     *,
     email: str = "unknown@example.com",
     first_name: str,
@@ -37,7 +38,7 @@ def run_query_loop(
             print("Goodbye!")
             break
 
-        message = agent.chat(query, session_id)
+        message = await agent.chat(query, session_id)
         print(f"\nAssistant: {message.content}\n")
 
 
@@ -48,10 +49,12 @@ def main() -> None:
     parser.add_argument("--email", default="unknown@example.com")
     args = parser.parse_args()
 
-    run_query_loop(
-        first_name=args.first_name,
-        last_name=args.last_name,
-        email=args.email,
+    asyncio.run(
+        run_query_loop(
+            first_name=args.first_name,
+            last_name=args.last_name,
+            email=args.email,
+        )
     )
 
 
