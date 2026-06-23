@@ -1,9 +1,9 @@
 import uuid
 
-from db.database import SessionLocal
 from sqlalchemy.orm import Session
 
 from db import models as db
+from db.database import SessionLocal
 from services.types import Client
 
 
@@ -15,7 +15,7 @@ class ClientStore:
         self._db = db_session
 
     @staticmethod
-    def default() -> "ClientStore": 
+    def default() -> "ClientStore":
         """Get the default client store."""
         client_store = ClientStore(db_session=SessionLocal())
         return client_store
@@ -39,16 +39,18 @@ class ClientStore:
         client = self._to_client(record)
         return client
 
-    def get_client(self, *, client_id: uuid.UUID | None = None, email: str | None = None) -> Client | None:
+    def get_client(
+        self, *, client_id: uuid.UUID | None = None, email: str | None = None
+    ) -> Client | None:
         """Load a client by id or email ."""
         if client_id is not None:
             record = self._db.query(db.Client).filter(db.Client.id == client_id).one_or_none()
         else:
             record = self._db.query(db.Client).filter(db.Client.email == email).one_or_none()
-        
+
         if record is None:
             return None
-        
+
         client = self._to_client(record)
         return client
 

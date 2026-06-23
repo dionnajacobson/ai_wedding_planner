@@ -1,11 +1,12 @@
 import inspect
 import json
 from pathlib import Path
-from typing import Union
+
 from pydantic import BaseModel
+
 from agents.prompts.types import LLMPromptInput
 
-DATA_TYPES = Union[dict, str, BaseModel]
+DATA_TYPES = dict | str | BaseModel
 
 
 class BaseDataAssertionTest:
@@ -33,8 +34,7 @@ class BaseDataAssertionTest:
 
         saved = file_path.read_text(encoding="utf-8")
         assert saved == expected, (
-            f"Snapshot mismatch for {file_path.name}. "
-            "Set overwrite_test_data = True to regenerate."
+            f"Snapshot mismatch for {file_path.name}. Set overwrite_test_data = True to regenerate."
         )
         return data
 

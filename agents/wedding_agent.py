@@ -1,6 +1,7 @@
 import uuid
 
-from agents.client.openai_client import OpenAIClient
+from agents.client import LLMClient
+from agents.client.types import LLMRequest, Model
 from agents.prompts.prompts import WeddingPromptJinja
 from services.message_service import MessageService
 from services.types import Message, MessageRole
@@ -12,7 +13,7 @@ class WeddingAgent:
 
     def __init__(
         self,
-        client: OpenAIClient | None,
+        client: LLMClient,
         message_service: MessageService,
         wedding_service: WeddingService,
     ):
@@ -24,7 +25,7 @@ class WeddingAgent:
     @staticmethod
     def default() -> "WeddingAgent":
         """Get the default wedding agent."""
-        client = OpenAIClient()
+        client = LLMClient()
         message_service = MessageService.default()
         wedding_service = WeddingService.default()
         agent = WeddingAgent(
@@ -46,10 +47,14 @@ class WeddingAgent:
         prompt = WeddingPromptJinja(messages=messages, query=query)
         rendered_prompt = prompt.render()
 
-        response = self._client.invoke(
-            input=rendered_prompt,
+        request = LLMRequest(
+            system=rendered_prompt,
+            user=query,
+            model=Model.GPT_4O_MINI_2024_07_18,
             max_tokens=max_tokens,
         )
+
+        response = self._client.invoke(request=request)
 
         # Record the user message
         self._message_service.create_message(
@@ -59,7 +64,7 @@ class WeddingAgent:
         )
         message = self._message_service.create_message(
             session_id,
-            message_content=response.text,
+            message_content=response.content,
             message_role=MessageRole.ASSISTANT,
         )
         return message

@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
+
 from jinja2 import Environment, FileSystemLoader, Template
+
 from .types import LLMPromptInput
 
-
 JINJA_PROMPTS_DIR = Path(__file__).parent / "templates"
+
 
 class Prompt(ABC):
     """Render prompts for an LLM."""
@@ -13,6 +15,7 @@ class Prompt(ABC):
     def render(self, **context) -> LLMPromptInput:
         """Render a stored template into a prompt string."""
         pass
+
 
 class JinjaPrompt(Prompt):
     """Render stored Jinja template files into LLM prompt strings."""
@@ -52,4 +55,4 @@ class JinjaPrompt(Prompt):
         # blocks[name] returns a generator of text chunks, not a plain string.
         block = template.blocks[block_name](new_context)
         block_text = "".join(block).strip()
-        return block_text    
+        return block_text

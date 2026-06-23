@@ -2,10 +2,11 @@ import uuid
 
 from sqlalchemy.orm import Session, selectinload
 
-from db.database import SessionLocal
 from db import models as db
-from services.types import Wedding
+from db.database import SessionLocal
 from services.stores.client_store import ClientStore
+from services.types import Wedding
+
 
 class WeddingStore:
     """Persist and load wedding records."""
@@ -73,5 +74,3 @@ class WeddingStore:
             session_ids=session_ids,
         )
         return wedding
-
-

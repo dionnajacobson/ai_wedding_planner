@@ -1,11 +1,12 @@
 import uuid
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel
 
 
-class MessageRole(str, Enum):
+class MessageRole(StrEnum):
     """Message role."""
+
     USER = "user"
     ASSISTANT = "assistant"
 
@@ -26,6 +27,7 @@ class Wedding(BaseModel):
     id: uuid.UUID
     client: Client
     session_ids: list[uuid.UUID]
+
 
 class Message(BaseModel):
     """Message model."""

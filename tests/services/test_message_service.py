@@ -41,9 +41,9 @@ class TestMessageService:
             )
 
             # ASSERT
-            assert result.content == case["message_content"]    
+            assert result.content == case["message_content"]
             message_store.create_message.assert_called_once()
-            
+
     def test_get_messages(self) -> None:
         """Run get-messages scenarios from the test table."""
         test_cases: list[dict[str, Any]] = [
