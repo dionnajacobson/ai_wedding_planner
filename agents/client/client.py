@@ -1,5 +1,6 @@
 """LLM client that routes requests to provider adapters."""
 
+from agents.client.anthropic.adapter import AnthropicAdapter
 from agents.client.openai.adapter import OpenAIAdapter
 from agents.client.protocols import LLMAdapter
 from agents.client.types import LLMRequest, LLMResponse
@@ -12,6 +13,8 @@ class LLMClient:
         """Get the adapter for a provider."""
         if provider_name == "openai":
             return OpenAIAdapter()
+        if provider_name == "anthropic":
+            return AnthropicAdapter()
         raise ValueError(f"Invalid provider: {provider_name}")
 
     def invoke(self, request: LLMRequest) -> LLMResponse:

@@ -10,9 +10,10 @@ from agents.tools.types import ToolCall, ToolDefinition
 
 
 class Model(Enum):
-    """OpenAI models."""
+    """LLM models keyed as provider/model-name."""
 
     GPT_4O_MINI_2024_07_18 = "openai/gpt-4o-mini-2024-07-18"
+    CLAUDE_SONNET_4_6 = "anthropic/claude-sonnet-4-6"
 
     def provider_name(self) -> str:
         """Get the provider for the model."""
