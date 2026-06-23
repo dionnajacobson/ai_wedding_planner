@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, StrEnum
 
 from pydantic import BaseModel
 
 from agents.tools.types import ToolCall, ToolDefinition
+
+
+class Provider(StrEnum):
+    """Supported LLM providers."""
+
+    OPENAI = "openai"
+    ANTHROPIC = "anthropic"
 
 
 class Model(Enum):
@@ -14,16 +21,6 @@ class Model(Enum):
 
     GPT_4O_MINI_2024_07_18 = "openai/gpt-4o-mini-2024-07-18"
     CLAUDE_SONNET_4_6 = "anthropic/claude-sonnet-4-6"
-
-    def provider_name(self) -> str:
-        """Get the provider for the model."""
-        provider = self.value.split("/")[0]
-        return provider
-
-    def model_name(self) -> str:
-        """Get the model name for the model."""
-        model_name = self.value.split("/")[1]
-        return model_name
 
 
 class LLMRequest(BaseModel):
@@ -40,5 +37,5 @@ class LLMResponse(BaseModel):
     """Normalized output from any LLM provider."""
 
     content: str | None
-    model: str
+    model: Model
     tool_calls: list[ToolCall] | None = None

@@ -16,4 +16,5 @@ class OpenAIPayload(BaseModel):
     input: str
     instructions: str
     model: str
+    max_output_tokens: int
     tools: list[dict[str, Any]] | None = None

@@ -2,6 +2,7 @@ import uuid
 
 from fastapi import APIRouter, HTTPException
 
+from agents.client.errors import LLMAuthError, LLMError, LLMRateLimitError
 from agents.wedding_agent import WeddingAgent
 from api.schemas import (
     ChatRequest,
@@ -43,6 +44,12 @@ def send_message(body: ChatRequest) -> ChatResponse:
         if "Wedding not found" in str(exc):
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+    except LLMAuthError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    except LLMRateLimitError as exc:
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
+    except LLMError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     return ChatResponse(session_id=body.session_id, message=message)
 
