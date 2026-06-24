@@ -3,6 +3,7 @@ import asyncio
 
 from agents.wedding_agent import WeddingAgent
 from db.database import init_db
+from observability.logging import configure_logging
 from services.wedding_service import WeddingService
 
 
@@ -13,6 +14,7 @@ async def run_query_loop(
     last_name: str = "Jacobson",
 ) -> None:
     """Run an interactive wedding planning chat using OpenAI and PostgreSQL."""
+    configure_logging()
     init_db()
     wedding_service = WeddingService.default()
     agent = WeddingAgent.default()

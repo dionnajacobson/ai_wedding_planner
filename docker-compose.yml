@@ -16,5 +16,20 @@ services:
       timeout: 5s
       retries: 5
 
+  app:
+    build: .
+    container_name: wedding_planner_app
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://wedding:wedding@db:5432/wedding_planner
+      LOG_FORMAT: json
+      LOG_LEVEL: INFO
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   wedding_planner_data:

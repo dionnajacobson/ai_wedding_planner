@@ -7,6 +7,8 @@ from fastapi.staticfiles import StaticFiles
 
 from api.routes import chat
 from db.database import init_db
+from observability.logging import configure_logging
+from observability.middleware import RequestLoggingMiddleware
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -14,6 +16,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize database tables when the application starts."""
+    configure_logging()
     init_db()
     yield
 
@@ -26,6 +29,8 @@ def create_app() -> FastAPI:
         version="0.2.0",
         lifespan=lifespan,
     )
+
+    app.add_middleware(RequestLoggingMiddleware)
 
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     app.include_router(chat.router)

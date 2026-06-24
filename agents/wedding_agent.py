@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from agents.client import LLMClient
@@ -6,9 +7,12 @@ from agents.prompts.prompts import WeddingPromptJinja
 from agents.tools.registry import ToolRegistry
 from agents.tools.types import ToolResult
 from agents.tools.web_search import WebSearchTool
+from observability.logging import log_context
 from services.message_service import MessageService
 from services.types import Message, MessageRole
 from services.wedding_service import WeddingService
+
+logger = logging.getLogger(__name__)
 
 
 class WeddingAgent:
@@ -53,43 +57,68 @@ class WeddingAgent:
         max_tokens: int = 1024,
     ) -> Message:
         """Chat with the wedding agent."""
-        messages = self._message_service.get_messages(session_id)
-        tool_results: list[ToolResult] = []
-        response = None
-
-        for _ in range(self._MAX_TOOL_ROUNDS):
-            prompt = WeddingPromptJinja(
-                messages=messages,
-                query=query,
-                tool_results=tool_results,
+        with log_context(session_id=str(session_id)):
+            logger.info(
+                "chat_started",
+                extra={"model": self._model.value, "max_tokens": max_tokens},
             )
-            rendered_prompt = prompt.render()
-            request = LLMRequest(
-                system=rendered_prompt.system,
-                user=rendered_prompt.user,
-                model=self._model,
-                tools=self._tools.definitions(),
-                max_tokens=max_tokens,
+
+            messages = self._message_service.get_messages(session_id)
+            tool_results: list[ToolResult] = []
+            response = None
+            tool_rounds = 0
+
+            for round_number in range(1, self._MAX_TOOL_ROUNDS + 1):
+                prompt = WeddingPromptJinja(
+                    messages=messages,
+                    query=query,
+                    tool_results=tool_results,
+                )
+                rendered_prompt = prompt.render()
+                request = LLMRequest(
+                    system=rendered_prompt.system,
+                    user=rendered_prompt.user,
+                    model=self._model,
+                    tools=self._tools.definitions(),
+                    max_tokens=max_tokens,
+                )
+                response = self._client.invoke(request=request)
+
+                if not response.tool_calls:
+                    break
+
+                tool_rounds += 1
+                tool_names = [tool_call.name for tool_call in response.tool_calls]
+                logger.info(
+                    "tool_round_started",
+                    extra={
+                        "round_number": round_number,
+                        "tool_count": len(response.tool_calls),
+                        "tool_names": tool_names,
+                    },
+                )
+                round_results = await self._tools.execute_all(response.tool_calls)
+                tool_results.extend(round_results)
+
+            content = response.content if response else None
+            content = content or "I couldn't generate a response."
+
+            self._message_service.create_message(
+                session_id,
+                message_content=query,
+                message_role=MessageRole.USER,
             )
-            response = self._client.invoke(request=request)
+            message = self._message_service.create_message(
+                session_id,
+                message_content=content,
+                message_role=MessageRole.ASSISTANT,
+            )
 
-            if not response.tool_calls:
-                break
-
-            round_results = await self._tools.execute_all(response.tool_calls)
-            tool_results.extend(round_results)
-
-        content = response.content if response else None
-        content = content or "I couldn't generate a response."
-
-        self._message_service.create_message(
-            session_id,
-            message_content=query,
-            message_role=MessageRole.USER,
-        )
-        message = self._message_service.create_message(
-            session_id,
-            message_content=content,
-            message_role=MessageRole.ASSISTANT,
-        )
-        return message
+            logger.info(
+                "chat_completed",
+                extra={
+                    "tool_rounds": tool_rounds,
+                    "response_length": len(content),
+                },
+            )
+            return message

@@ -2,20 +2,17 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install uv for faster package management
-RUN pip install uv
+ENV PYTHONUNBUFFERED=1
+ENV LOG_FORMAT=json
+ENV LOG_LEVEL=INFO
 
-# Copy package management files
+RUN pip install --no-cache-dir uv
+
 COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev
 
-# Install dependencies using uv
-RUN uv sync --frozen
+COPY . .
 
-# Copy application code
-COPY main.py .
+EXPOSE 8000
 
-# Expose the port the server runs on
-EXPOSE 8050
-
-# Command to run the server
-CMD ["uv", "run", "main.py"] 
+CMD ["uv", "run", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]

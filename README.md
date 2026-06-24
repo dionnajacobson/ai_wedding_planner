@@ -24,10 +24,9 @@ ai_wedding_planner/
 ├── agents/
 │   ├── wedding_agent.py      # Chat loop + tool execution
 │   ├── client/               # LLMClient, adapters, types, errors
-│   │   ├── openai/           # OpenAI Responses API adapter
-│   │   └── anthropic/        # Anthropic Messages API adapter
 │   ├── tools/                # Tool protocol, registry, web search
 │   └── prompts/              # Jinja templates + prompt builders
+├── observability/            # logging setup, request context, middleware
 ├── services/                 # Client, wedding, and message services
 │   └── stores/
 ├── tests/
@@ -80,16 +79,29 @@ uv sync
 cp .env.example .env
 ```
 
-Add API keys to `.env`, then start PostgreSQL:
+Add API keys to `.env`, then start services:
 
 ```bash
-docker compose up -d
+# Database only (local dev with uvicorn --reload on the host)
+docker compose up -d db
+
+# App + database (containerized API)
+docker compose up --build
 ```
 
 ## Running the web UI
 
+**Local development (hot reload):**
+
 ```bash
+docker compose up -d db
 uv run uvicorn api.main:app --reload
+```
+
+**Docker (app + db):**
+
+```bash
+docker compose up --build
 ```
 
 Open **http://127.0.0.1:8000** to chat. Enter your name and email to start, then share wedding details in the conversation. The UI saves your session in browser local storage so refreshes keep the conversation.
@@ -126,6 +138,8 @@ Each CLI run creates a new session.
 | `ANTHROPIC_API_KEY` | No | For Anthropic adapter E2E tests |
 | `TAVILY_API_KEY` | No | Required for live web search |
 | `DATABASE_URL` | No | `postgresql+psycopg://wedding:wedding@localhost:5432/wedding_planner` |
+| `LOG_LEVEL` | No | `INFO` |
+| `LOG_FORMAT` | No | `console` locally; `json` in Docker |
 
 ### Models
 
@@ -142,6 +156,25 @@ Inspect the database:
 
 ```bash
 docker exec -it wedding_planner_db psql -U wedding -d wedding_planner
+```
+
+## Observability
+
+Uses Python [`logging`](https://docs.python.org/3/library/logging.html) + [structlog](https://www.structlog.org/) for structured JSON/console output.
+
+| File | Purpose |
+|------|---------|
+| `logging.py` | `configure_logging()`, `log_context()` |
+| `middleware.py` | Request id + HTTP lifecycle logs |
+
+Call `configure_logging()` once at startup, then use `logging.getLogger(__name__)` in each module.
+
+Every HTTP response includes an `X-Request-ID` header. Set `LOG_LEVEL` and `LOG_FORMAT` (`console` or `json`) via env vars.
+
+View Docker logs:
+
+```bash
+docker compose logs -f app
 ```
 
 ## Tools

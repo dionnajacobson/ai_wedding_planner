@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+import time
 
 from agents.tools.protocols import Tool
 from agents.tools.types import ToolCall, ToolDefinition, ToolResult
+
+logger = logging.getLogger(__name__)
 
 
 class ToolRegistry:
@@ -30,7 +34,30 @@ class ToolRegistry:
         if tool is None:
             raise ValueError(f"Unknown tool: {tool_call.name}")
 
-        result = await tool.execute(tool_call)
+        start = time.perf_counter()
+        try:
+            result = await tool.execute(tool_call)
+        except Exception:
+            duration_ms = round((time.perf_counter() - start) * 1000, 2)
+            logger.exception(
+                "tool_execute_failed",
+                extra={
+                    "tool_name": tool_call.name,
+                    "tool_call_id": tool_call.id,
+                    "duration_ms": duration_ms,
+                },
+            )
+            raise
+
+        duration_ms = round((time.perf_counter() - start) * 1000, 2)
+        logger.info(
+            "tool_execute_completed",
+            extra={
+                "tool_name": tool_call.name,
+                "tool_call_id": tool_call.id,
+                "duration_ms": duration_ms,
+            },
+        )
         return result
 
     async def execute_all(self, tool_calls: list[ToolCall]) -> list[ToolResult]:

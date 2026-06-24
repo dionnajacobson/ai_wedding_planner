@@ -15,6 +15,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "python-dotenv>=1.0.0",
     "sqlalchemy>=2.0.0",
+    "structlog>=24.4.0",
     "tavily>=1.1.0",
     "uvicorn[standard]>=0.32.0",
 ]
@@ -52,7 +53,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["agents", "api", "db", "services", "tests"]
+known-first-party = ["agents", "api", "db", "observability", "services", "tests"]
 
 [tool.ruff.format]
 quote-style = "double"
