@@ -68,7 +68,7 @@ class OpenAIAdapter(LLMAdapter):
         """Convert one tool definition into a Responses API function tool."""
         tool_payload = {
             "type": "function",
-            "name": tool.name,
+            "name": tool.name.value,
             "description": tool.description,
             "parameters": to_strict_json_schema(tool.params_model),
             "strict": True,

@@ -24,8 +24,13 @@ alwaysApply: true
 - Functions and class methods should be alphabetized in files, starting with public at the top then private (e.g. "_") at the bottom
 - Input arguments should be alphabetized.
 
+# Classes
+
+- Inject stateless dependencies in `__init__` (services, clients, runners, registries) and build stateful dependencies in the method that uses them (e.g. per-request `Agent`, prompts, and run config inside `chat()` rather than on the class).
+
 # Tests
 
+- Use table-driven tests for unit tests: define a `test_cases: list[dict[str, Any]]` with a `"name"` key per scenario, loop with `for case in test_cases:`, and add new scenarios as table rows rather than new test methods.
 - Structure tests in three sections: # ARRANGE, # ACT, # ASSERT
 - Only add tests that meaningfully add test coverage; don't add tests for functions that don't do anything or just to check that a class variable is set.
 - Mock as little as possible in order to keep things terse. Prefer not assigning an attribute or functionality to a mock if possible.

@@ -6,37 +6,37 @@ import asyncio
 import logging
 import time
 
-from agents.tools.protocols import Tool
-from agents.tools.types import ToolCall, ToolDefinition, ToolResult
+from agents.tools.protocols import ToolExecutor
+from agents.tools.types import ToolCall, ToolName, ToolResult
 
 logger = logging.getLogger(__name__)
 
 
 class ToolRegistry:
-    """Register local tools and execute tool calls by name."""
+    """Route LLM tool calls to registered executors by name."""
 
     def __init__(self) -> None:
-        self._tools: dict[str, Tool] = {}
+        """Initialize the tool registry."""
+        self._executors: dict[str, ToolExecutor] = {}
 
-    def register(self, tool: Tool) -> None:
-        """Register one tool implementation."""
-        definition = tool.definition()
-        self._tools[definition.name] = tool
+    @staticmethod
+    def default() -> ToolRegistry:
+        """Get the default tool registry."""
+        from agents.tools.web_search import WebSearchExecutor
 
-    def definitions(self) -> list[ToolDefinition]:
-        """Return all registered tool definitions."""
-        definitions = [tool.definition() for tool in self._tools.values()]
-        return definitions
+        tool_registry = ToolRegistry()
+        tool_registry.register(ToolName.WEB_SEARCH, WebSearchExecutor())
+        return tool_registry
 
     async def execute(self, tool_call: ToolCall) -> ToolResult:
         """Run one tool call and return its text result."""
-        tool = self._tools.get(tool_call.name)
-        if tool is None:
+        executor = self._executors.get(tool_call.name)
+        if executor is None:
             raise ValueError(f"Unknown tool: {tool_call.name}")
 
         start = time.perf_counter()
         try:
-            result = await tool.execute(tool_call)
+            result = await executor.execute(tool_call)
         except Exception:
             duration_ms = round((time.perf_counter() - start) * 1000, 2)
             logger.exception(
@@ -65,3 +65,7 @@ class ToolRegistry:
         tasks = [self.execute(tool_call) for tool_call in tool_calls]
         results = await asyncio.gather(*tasks)
         return list(results)
+
+    def register(self, name: ToolName, executor: ToolExecutor) -> None:
+        """Register one executor under a tool name."""
+        self._executors[name.value] = executor

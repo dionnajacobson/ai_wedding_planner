@@ -9,8 +9,8 @@ import pytest
 from dotenv import load_dotenv
 
 from agents.tools.registry import ToolRegistry
-from agents.tools.types import ToolCall
-from agents.tools.web_search import WebSearchTool
+from agents.tools.types import ToolCall, ToolName
+from agents.tools.web_search import WebSearchExecutor
 
 load_dotenv()
 
@@ -46,7 +46,7 @@ class TestWebSearchTool:
             },
         ]
 
-        tool = WebSearchTool(client=MagicMock())
+        tool = WebSearchExecutor(client=MagicMock())
 
         for case in test_cases:
             # ACT
@@ -76,7 +76,7 @@ class TestWebSearchTool:
             # ARRANGE
             client = MagicMock()
             client.search = AsyncMock(return_value=case["search_response"])
-            tool = WebSearchTool(client=client)
+            tool = WebSearchExecutor(client=client)
 
             # ACT
             text = asyncio.run(tool._search(case["query"]))
@@ -113,7 +113,7 @@ class TestWebSearchTool:
             client = MagicMock()
             client.search = AsyncMock(return_value=case["search_response"])
             registry = ToolRegistry()
-            registry.register(WebSearchTool(client=client))
+            registry.register(ToolName.WEB_SEARCH, WebSearchExecutor(client=client))
 
             # ACT
             result = asyncio.run(registry.execute(case["tool_call"]))
@@ -137,7 +137,7 @@ class TestWebSearchToolE2E:
             },
         ]
 
-        tool = WebSearchTool()
+        tool = WebSearchExecutor()
 
         for case in test_cases:
             # ACT

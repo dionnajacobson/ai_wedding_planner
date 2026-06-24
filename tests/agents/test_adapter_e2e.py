@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from agents.client.anthropic.adapter import AnthropicAdapter
 from agents.client.openai.adapter import OpenAIAdapter
 from agents.client.types import LLMRequest, Model
-from tests.agents.mock_data import DaysUntilDateTool
+from tests.agents.mock_data import DaysUntilDateDefinition
 
 load_dotenv()
 
@@ -46,7 +46,7 @@ class TestAdapterE2E:
                 "Always use the days_until_date tool for date countdown questions."
             ),
             "user": "How many days until 2026-09-15?",
-            "tools": [DaysUntilDateTool().definition()],
+            "tools": [DaysUntilDateDefinition()],
             "expect_tool_calls": True,
             "expected_tool_name": "days_until_date",
             "expected_argument_key": "event_date",

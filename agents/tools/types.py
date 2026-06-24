@@ -2,9 +2,17 @@
 
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
+
+
+class ToolName(str, Enum):
+    """Registered tool names."""
+
+    DAYS_UNTIL_DATE = "days_until_date"
+    WEB_SEARCH = "web_search"
 
 
 class ToolDefinition(BaseModel):
@@ -12,7 +20,7 @@ class ToolDefinition(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    name: str
+    name: ToolName
     description: str
     params_model: type[BaseModel]
 

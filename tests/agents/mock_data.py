@@ -6,8 +6,8 @@ from datetime import date
 
 from pydantic import BaseModel, Field
 
-from agents.tools.protocols import Tool
-from agents.tools.types import ToolCall, ToolDefinition, ToolResult
+from agents.tools.protocols import ToolExecutor
+from agents.tools.types import ToolCall, ToolDefinition, ToolName, ToolResult
 
 
 class DaysUntilDateInput(BaseModel):
@@ -16,17 +16,16 @@ class DaysUntilDateInput(BaseModel):
     event_date: str = Field(description="Target date in YYYY-MM-DD format.")
 
 
-class DaysUntilDateTool(Tool):
-    """Calculate how many days remain until a wedding or event date."""
+class DaysUntilDateDefinition(ToolDefinition):
+    """Schema exposed to the LLM for the days_until_date tool."""
 
-    def definition(self) -> ToolDefinition:
-        """Return the days_until_date tool schema."""
-        definition = ToolDefinition(
-            name="days_until_date",
-            description="Calculate how many days remain until a wedding or event date.",
-            params_model=DaysUntilDateInput,
-        )
-        return definition
+    name: ToolName = ToolName.DAYS_UNTIL_DATE
+    description: str = "Calculate how many days remain until a wedding or event date."
+    params_model: type[BaseModel] = DaysUntilDateInput
+
+
+class DaysUntilDateExecutor(ToolExecutor):
+    """Calculate how many days remain until a wedding or event date."""
 
     async def execute(self, tool_call: ToolCall) -> ToolResult:
         """Return the number of days from today until the given date."""

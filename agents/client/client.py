@@ -25,9 +25,14 @@ def default_adapters() -> dict[Provider, LLMAdapter]:
 class LLMClient:
     """Route normalized requests to injected provider adapters."""
 
-    def __init__(self, adapters: dict[Provider, LLMAdapter] | None = None) -> None:
+    def __init__(self, adapters: dict[Provider, LLMAdapter]) -> None:
         """Initialize the LLM client with a provider adapter registry."""
-        self._adapters = adapters or default_adapters()
+        self._adapters = adapters
+
+    @staticmethod
+    def default() -> LLMClient:
+        """Get the default LLM client."""
+        return LLMClient(adapters=default_adapters())
 
     def invoke(self, request: LLMRequest) -> LLMResponse:
         """Invoke the adapter for the request model's provider."""

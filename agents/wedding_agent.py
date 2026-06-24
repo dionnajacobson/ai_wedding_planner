@@ -1,12 +1,10 @@
 import logging
 import uuid
 
-from agents.client import LLMClient
-from agents.client.types import LLMRequest, Model
+from agents.agent import Agent, AgentRunner
+from agents.client.types import Model
 from agents.prompts.prompts import WeddingPromptJinja
-from agents.tools.registry import ToolRegistry
-from agents.tools.types import ToolResult
-from agents.tools.web_search import WebSearchTool
+from agents.tools import WebSearchDefinition
 from observability.logging import log_context
 from services.message_service import MessageService
 from services.types import Message, MessageRole
@@ -18,33 +16,26 @@ logger = logging.getLogger(__name__)
 class WeddingAgent:
     """Run wedding planning chat sessions with the LLM."""
 
-    _MAX_TOOL_ROUNDS = 10
-
     def __init__(
         self,
-        client: LLMClient,
+        runner: AgentRunner,
         message_service: MessageService,
         wedding_service: WeddingService,
-        tools: ToolRegistry,
     ):
         """Initialize the wedding agent."""
-        self._client = client
+        self._runner = runner
         self._message_service = message_service
         self._wedding_service = wedding_service
-        self._tools = tools
 
     @staticmethod
     def default() -> "WeddingAgent":
         """Get the default wedding agent."""
-        tools = ToolRegistry()
-        tools.register(WebSearchTool())
-        agent = WeddingAgent(
-            client=LLMClient(),
+        wedding_agent = WeddingAgent(
+            runner=AgentRunner.default(),
             message_service=MessageService.default(),
             wedding_service=WeddingService.default(),
-            tools=tools,
         )
-        return agent
+        return wedding_agent
 
     async def chat(
         self,
@@ -56,44 +47,14 @@ class WeddingAgent:
             logger.info("chat_started")
 
             messages = self._message_service.get_messages(session_id)
-            tool_results: list[ToolResult] = []
-            response = None
-            tool_rounds = 0
-
-            for round_number in range(1, self._MAX_TOOL_ROUNDS + 1):
-                prompt = WeddingPromptJinja(
-                    messages=messages,
-                    query=query,
-                    tool_results=tool_results,
-                )
-                rendered_prompt = prompt.render()
-                request = LLMRequest(
-                    system=rendered_prompt.system,
-                    user=rendered_prompt.user,
-                    model=Model.GPT_4O_MINI_2024_07_18,
-                    tools=self._tools.definitions(),
-                    max_tokens=1024,
-                )
-                response = self._client.invoke(request=request)
-
-                if not response.tool_calls:
-                    break
-
-                tool_rounds += 1
-                tool_names = [tool_call.name for tool_call in response.tool_calls]
-                logger.info(
-                    "tool_round_started",
-                    extra={
-                        "round_number": round_number,
-                        "tool_count": len(response.tool_calls),
-                        "tool_names": tool_names,
-                    },
-                )
-                round_results = await self._tools.execute_all(response.tool_calls)
-                tool_results.extend(round_results)
-
-            content = response.content if response else None
-            content = content or "I couldn't generate a response."
+            prompt = WeddingPromptJinja(query=query, messages=messages)
+            agent = Agent(
+                name="Wedding Planner",
+                model=Model.GPT_4O_MINI_2024_07_18,
+                tools=[WebSearchDefinition()],
+                prompt=prompt,
+            )
+            result = await self._runner.run(agent)
 
             self._message_service.create_message(
                 session_id,
@@ -102,15 +63,15 @@ class WeddingAgent:
             )
             message = self._message_service.create_message(
                 session_id,
-                message_content=content,
+                message_content=result.content,
                 message_role=MessageRole.ASSISTANT,
             )
 
             logger.info(
                 "chat_completed",
                 extra={
-                    "tool_rounds": tool_rounds,
-                    "response_length": len(content),
+                    "tool_rounds": result.tool_rounds,
+                    "response_length": len(result.content),
                 },
             )
             return message

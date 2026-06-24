@@ -46,6 +46,7 @@ class WeddingPromptJinja(JinjaPrompt):
     """Wedding prompt Jinja prompt."""
 
     template_name = "wedding_prompt.jinja"
+    runtime_fields = {"tool_results": format_tool_results_as_xml}
 
     def __init__(
         self,
@@ -55,10 +56,10 @@ class WeddingPromptJinja(JinjaPrompt):
     ):
         """Initialize the wedding prompt Jinja prompt."""
         history = format_history_as_xml(messages or [])
-        tool_results_text = format_tool_results_as_xml(tool_results or [])
         user_context = {
             "history": history,
             "query": query,
-            "tool_results": tool_results_text,
         }
         super().__init__(user_context=user_context)
+        if tool_results:
+            self.update_context(tool_results=tool_results)

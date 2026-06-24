@@ -8,8 +8,8 @@ from typing import Any
 from pydantic import BaseModel, Field
 from tavily import AsyncTavilyClient
 
-from agents.tools.protocols import Tool
-from agents.tools.types import ToolCall, ToolDefinition, ToolResult
+from agents.tools.protocols import ToolExecutor
+from agents.tools.types import ToolCall, ToolDefinition, ToolName, ToolResult
 
 
 class WebSearchInput(BaseModel):
@@ -18,24 +18,23 @@ class WebSearchInput(BaseModel):
     query: str = Field(description="Search query for current wedding planning information.")
 
 
-class WebSearchTool(Tool):
+class WebSearchDefinition(ToolDefinition):
+    """Schema exposed to the LLM for the web_search tool."""
+
+    name: ToolName = ToolName.WEB_SEARCH
+    description: str = (
+        "Search the web for current information about venues, vendors, "
+        "pricing, trends, and other wedding planning topics."
+    )
+    params_model: type[BaseModel] = WebSearchInput
+
+
+class WebSearchExecutor(ToolExecutor):
     """Search the web for current wedding planning information."""
 
     def __init__(self, client: AsyncTavilyClient | None = None) -> None:
-        """Initialize the tool with an optional Tavily client."""
+        """Initialize the executor with an optional Tavily client."""
         self._client = client or AsyncTavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
-
-    def definition(self) -> ToolDefinition:
-        """Return the web_search tool schema."""
-        definition = ToolDefinition(
-            name="web_search",
-            description=(
-                "Search the web for current information about venues, vendors, "
-                "pricing, trends, and other wedding planning topics."
-            ),
-            params_model=WebSearchInput,
-        )
-        return definition
 
     async def execute(self, tool_call: ToolCall) -> ToolResult:
         """Run a Tavily search for the requested query."""

@@ -1,17 +1,13 @@
-"""Protocols for local tool implementations."""
+"""Protocols for local tool executors."""
 
 from typing import Protocol, runtime_checkable
 
-from agents.tools.types import ToolCall, ToolDefinition, ToolResult
+from agents.tools.types import ToolCall, ToolResult
 
 
 @runtime_checkable
-class Tool(Protocol):
-    """A local tool that exposes schema to the LLM and executes tool calls."""
-
-    def definition(self) -> ToolDefinition:
-        """Return the normalized tool schema for LLM adapters."""
-        ...
+class ToolExecutor(Protocol):
+    """Execute tool calls routed from the LLM by name."""
 
     async def execute(self, tool_call: ToolCall) -> ToolResult:
         """Run one tool call and return its text result."""

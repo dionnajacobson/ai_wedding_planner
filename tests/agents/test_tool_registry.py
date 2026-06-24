@@ -4,8 +4,8 @@ import asyncio
 from typing import Any
 
 from agents.tools.registry import ToolRegistry
-from agents.tools.types import ToolCall
-from tests.agents.mock_data import DaysUntilDateTool
+from agents.tools.types import ToolCall, ToolName
+from tests.agents.mock_data import DaysUntilDateExecutor
 
 
 class TestToolRegistry:
@@ -16,7 +16,7 @@ class TestToolRegistry:
         test_cases: list[dict[str, Any]] = [
             {
                 "name": "executes_days_until_date",
-                "tool": DaysUntilDateTool(),
+                "executor": DaysUntilDateExecutor(),
                 "tool_call": ToolCall(
                     id="call_1",
                     name="days_until_date",
@@ -30,7 +30,7 @@ class TestToolRegistry:
         for case in test_cases:
             # ARRANGE
             registry = ToolRegistry()
-            registry.register(case["tool"])
+            registry.register(ToolName.DAYS_UNTIL_DATE, case["executor"])
 
             # ACT
             result = asyncio.run(registry.execute(case["tool_call"]))
