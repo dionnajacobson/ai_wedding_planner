@@ -25,15 +25,12 @@ class WeddingAgent:
         client: LLMClient,
         message_service: MessageService,
         wedding_service: WeddingService,
-        *,
-        model: Model,
         tools: ToolRegistry,
     ):
         """Initialize the wedding agent."""
         self._client = client
         self._message_service = message_service
         self._wedding_service = wedding_service
-        self._model = model
         self._tools = tools
 
     @staticmethod
@@ -45,7 +42,6 @@ class WeddingAgent:
             client=LLMClient(),
             message_service=MessageService.default(),
             wedding_service=WeddingService.default(),
-            model=Model.GPT_4O_MINI_2024_07_18,
             tools=tools,
         )
         return agent
@@ -54,14 +50,10 @@ class WeddingAgent:
         self,
         query: str,
         session_id: uuid.UUID,
-        max_tokens: int = 1024,
     ) -> Message:
         """Chat with the wedding agent."""
         with log_context(session_id=str(session_id)):
-            logger.info(
-                "chat_started",
-                extra={"model": self._model.value, "max_tokens": max_tokens},
-            )
+            logger.info("chat_started")
 
             messages = self._message_service.get_messages(session_id)
             tool_results: list[ToolResult] = []
@@ -78,9 +70,9 @@ class WeddingAgent:
                 request = LLMRequest(
                     system=rendered_prompt.system,
                     user=rendered_prompt.user,
-                    model=self._model,
+                    model=Model.GPT_4O_MINI_2024_07_18,
                     tools=self._tools.definitions(),
-                    max_tokens=max_tokens,
+                    max_tokens=1024,
                 )
                 response = self._client.invoke(request=request)
 

@@ -45,7 +45,6 @@ async def send_message(body: ChatRequest) -> ChatResponse:
         message = await agent.chat(
             query=body.message,
             session_id=body.session_id,
-            max_tokens=body.max_tokens,
         )
     except ValueError as exc:
         if "Wedding not found" in str(exc):

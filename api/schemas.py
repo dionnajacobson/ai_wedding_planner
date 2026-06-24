@@ -24,7 +24,6 @@ class ChatRequest(BaseModel):
 
     session_id: uuid.UUID
     message: str = Field(min_length=1, examples=["What should we book first?"])
-    max_tokens: int = 1024
 
 
 class ChatResponse(BaseModel):
