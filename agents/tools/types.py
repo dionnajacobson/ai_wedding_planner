@@ -47,7 +47,7 @@ class AgentToolDefinition(ToolDefinition):
     @property
     def name_formatted(self) -> str:
         """Return the provider-facing tool name."""
-        return f"{self.name.value}.{self.agent_name}"
+        return f"{self.name.value}_{self.agent_name}"
 
 
 class ToolCall(BaseModel):

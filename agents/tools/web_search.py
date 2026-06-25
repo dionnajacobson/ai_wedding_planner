@@ -41,7 +41,10 @@ class WebSearchExecutor(ToolExecutor):
 
     async def execute(
         self,
-        tool_call: ToolCall
+        tool_call: ToolCall,
+        *,
+        agents: dict[str, Agent] | None = None,
+        runner: Any | None = None,
     ) -> ToolResult:
         """Run a Tavily search for the requested query."""
         search_input = WebSearchInput.model_validate(tool_call.arguments)

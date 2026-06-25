@@ -85,7 +85,7 @@ class TestAgentAsTool:
             assert definition.description == case["expected_description"]
             assert definition.params_model is AgentToolInput
             assert definition.agent_name == format_agent_name(agent.name)
-            assert definition.name_formatted == f"agent_as_tool.{format_agent_name(agent.name)}"
+            assert definition.name_formatted == f"agent_as_tool_{format_agent_name(agent.name)}"
 
     def test_prepare_tools_converts_agents(self) -> None:
         """Sub-agents in tools are converted and indexed by name."""
@@ -97,7 +97,7 @@ class TestAgentAsTool:
         runner = AgentRunner(client=_UnusedClient(), tool_orchestrator=ToolOrchestrator())
 
         prepared = runner._prepare_tools([sub_agent])
-        tool_key = f"agent_as_tool.{format_agent_name(sub_agent.name)}"
+        tool_key = f"agent_as_tool_{format_agent_name(sub_agent.name)}"
         definition = prepared.definitions[tool_key]
 
         assert isinstance(definition, AgentToolDefinition)
@@ -130,7 +130,7 @@ class TestAgentAsTool:
             )
             tool_call = ToolCall(
                 id=case["tool_call"].id,
-                name=f"agent_as_tool.{format_agent_name(sub_agent.name)}",
+                name=f"agent_as_tool_{format_agent_name(sub_agent.name)}",
                 arguments=case["tool_call"].arguments,
             )
             tool_runner = AgentRunner(client=runner, tool_orchestrator=runner._orchestrator)
@@ -138,7 +138,7 @@ class TestAgentAsTool:
             tool_call = tool_runner._resolve_tool_calls(prepared, [tool_call])[0]
 
             assert tool_call.name == ToolName.AGENT_AS_TOOL.value
-            assert tool_call.tool_key == f"agent_as_tool.{format_agent_name(sub_agent.name)}"
+            assert tool_call.tool_key == f"agent_as_tool_{format_agent_name(sub_agent.name)}"
 
             # ACT
             result = asyncio.run(
