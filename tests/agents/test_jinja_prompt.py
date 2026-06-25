@@ -16,7 +16,7 @@ class TestJinjaPromptRuntimeContext:
         """Format runtime values through the subclass runtime_fields registry."""
         prompt = WeddingPromptJinja(
             query="What are venue costs?",
-            messages=[mock_message(content="Hello", role=MessageRole.USER)],
+            history=[mock_message(content="Hello", role=MessageRole.USER)],
         )
         tool_results = [
             ToolResult(tool_call_id="call_1", content="Average cost is $8,000."),
@@ -38,3 +38,16 @@ class TestJinjaPromptRuntimeContext:
         prompt.update_context(debug_count=3)
 
         assert prompt.runtime_context["debug_count"] == "3"
+
+    def test_format_tool_descriptions_renders_in_prompt(self) -> None:
+        """Tool descriptions appear in prompts that include the shared partial."""
+        from agents.tools.web_search import WebSearchDefinition
+
+        prompt = WeddingPromptJinja(
+            query="Find florists in Austin.",
+            tool_descriptions=[WebSearchDefinition()],
+        )
+        rendered = prompt.render()
+
+        assert "<tools>" in rendered.user
+        assert "web_search" in rendered.user

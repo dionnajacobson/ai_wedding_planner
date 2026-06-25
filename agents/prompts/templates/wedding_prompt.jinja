@@ -19,17 +19,6 @@ Stay warm, organized, and practical. Do not invent wedding details that were not
 {% endblock %}
 
 {% block user %}
-Conversation history:
-{{ history }}
-
-Latest message:
-{{ query }}
-{% if tool_results %}
-
-Tool results from this turn:
-{{ tool_results }}
-
-Use these tool results to answer the latest message. Do not treat them as conversation history.
-{% endif %}
+{% include "partials/conversation.jinja" %}
 Respond as the wedding planning agent.
 {% endblock %}

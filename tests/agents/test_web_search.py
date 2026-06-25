@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from dotenv import load_dotenv
 
-from agents.tools.registry import ToolRegistry
+from agents.tools.orchestrator import ToolOrchestrator
 from agents.tools.types import ToolCall, ToolName
 from agents.tools.web_search import WebSearchExecutor
 
@@ -63,9 +63,7 @@ class TestWebSearchTool:
                 "name": "calls_tavily_client",
                 "query": "Austin wedding venues",
                 "search_response": {
-                    "results": [
-                        {"title": "Venues", "content": "Top venues in Austin.", "url": ""}
-                    ]
+                    "results": [{"title": "Venues", "content": "Top venues in Austin.", "url": ""}]
                 },
                 "expected_query": "Austin wedding venues",
                 "expected_fragment": "Top venues in Austin.",
@@ -112,11 +110,12 @@ class TestWebSearchTool:
             # ARRANGE
             client = MagicMock()
             client.search = AsyncMock(return_value=case["search_response"])
-            registry = ToolRegistry()
-            registry.register(ToolName.WEB_SEARCH, WebSearchExecutor(client=client))
+            orchestrator = ToolOrchestrator(
+                {ToolName.WEB_SEARCH: WebSearchExecutor(client=client)},
+            )
 
             # ACT
-            result = asyncio.run(registry.execute(case["tool_call"]))
+            result = asyncio.run(orchestrator.execute(case["tool_call"]))
 
             # ASSERT
             assert result.tool_call_id == case["expected_tool_call_id"]

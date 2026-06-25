@@ -1,15 +1,15 @@
-"""Unit tests for the local tool registry."""
+"""Unit tests for the tool orchestrator."""
 
 import asyncio
 from typing import Any
 
-from agents.tools.registry import ToolRegistry
+from agents.tools.orchestrator import ToolOrchestrator
 from agents.tools.types import ToolCall, ToolName
 from tests.agents.mock_data import DaysUntilDateExecutor
 
 
-class TestToolRegistry:
-    """Table-driven tests for ToolRegistry."""
+class TestToolOrchestrator:
+    """Table-driven tests for ToolOrchestrator."""
 
     def test_execute(self) -> None:
         """Run execute scenarios from the test table."""
@@ -29,11 +29,12 @@ class TestToolRegistry:
 
         for case in test_cases:
             # ARRANGE
-            registry = ToolRegistry()
-            registry.register(ToolName.DAYS_UNTIL_DATE, case["executor"])
+            orchestrator = ToolOrchestrator(
+                {ToolName.DAYS_UNTIL_DATE: case["executor"]},
+            )
 
             # ACT
-            result = asyncio.run(registry.execute(case["tool_call"]))
+            result = asyncio.run(orchestrator.execute(case["tool_call"]))
 
             # ASSERT
             assert result.tool_call_id == case["expected_tool_call_id"]

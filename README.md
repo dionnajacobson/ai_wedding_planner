@@ -31,9 +31,9 @@ tests/
 
 ## Flow
 
-`WeddingAgent.chat` → render prompt → `AgentRunner` loops on LLM calls → `ToolRegistry` runs tool calls → save reply.
+`WeddingAgent.chat` → render prompt → `AgentRunner` loops on LLM calls → `ToolOrchestrator` runs tool calls → save reply.
 
-Tool **definitions** (`ToolDefinition` on the agent) and **executors** (`ToolRegistry.register(ToolName, ...)`) are linked by name only. Tool results appear in the prompt for the current turn, not in stored history.
+Tool **definitions** (`ToolDefinition` on the agent) and **executors** (dict passed to `ToolOrchestrator`) are linked by name only. Tool results appear in the prompt for the current turn, not in stored history.
 
 ## Configuration
 
@@ -57,10 +57,10 @@ Default model: `GPT_4O_MINI_2024_07_18`. Also supported: `CLAUDE_SONNET_4_6`.
 
 1. Add `ToolName` in `agents/tools/types.py`
 2. Subclass `ToolDefinition` + implement `ToolExecutor`
-3. `registry.register(ToolName.MY_TOOL, MyToolExecutor())` and `Agent(..., tools=[MyToolDefinition()])`
+3. Add the executor to `ToolOrchestrator.default()` and `Agent(..., tools=[MyToolDefinition()])`
 4. Tests in `tests/agents/` (table-driven; E2E skipped without API keys)
 
-Built-in: `WEB_SEARCH` (Tavily) — `WebSearchDefinition()` on the agent, executor in `ToolRegistry.default()`.
+Built-in: `WEB_SEARCH` (Tavily) — `WebSearchDefinition()` on the agent, executor in `ToolOrchestrator.default()`.
 
 ## Adding a prompt
 

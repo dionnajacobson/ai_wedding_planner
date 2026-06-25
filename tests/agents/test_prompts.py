@@ -1,7 +1,8 @@
 from typing import Any
 
-from agents.prompts.prompts import BaseJinjaPrompt, WeddingPromptJinja
+from agents.prompts.prompts import BaseJinjaPrompt, VendorSearchPromptJinja, WeddingPromptJinja
 from agents.tools.types import ToolResult
+from agents.tools.web_search import WebSearchDefinition
 from services.types import MessageRole
 from tests.base import PromptDataAssertionTest
 from tests.services.mock_data import mock_message
@@ -37,7 +38,7 @@ class TestWeddingPromptJinja(PromptDataAssertionTest):
 
     def test_wedding_prompt_jinja_e2e(self) -> None:
         """Run wedding prompt scenarios from the test table."""
-        mock_messages = [
+        mock_history = [
             mock_message(
                 content="We are getting married in 6 months and need to plan a wedding.",
                 role=MessageRole.USER,
@@ -52,7 +53,7 @@ class TestWeddingPromptJinja(PromptDataAssertionTest):
                 "name": "renders_wedding_prompt_with_history",
                 "prompt": WeddingPromptJinja(
                     query="What should we focus on next?",
-                    messages=mock_messages,
+                    history=mock_history,
                 ),
                 "fixture_name": "wedding_prompt",
             },
@@ -60,7 +61,7 @@ class TestWeddingPromptJinja(PromptDataAssertionTest):
                 "name": "renders_wedding_prompt_with_tool_results",
                 "prompt": WeddingPromptJinja(
                     query="What are average venue costs in Austin?",
-                    messages=mock_messages,
+                    history=mock_history,
                     tool_results=[
                         ToolResult(
                             tool_call_id="call_1",
@@ -75,6 +76,86 @@ class TestWeddingPromptJinja(PromptDataAssertionTest):
         for case in test_cases:
             # ACT
             rendered = case["prompt"].render()
+
+            # ASSERT
+            self.assert_test_data(rendered, case["fixture_name"])
+
+
+class TestVendorSearchPromptJinja(PromptDataAssertionTest):
+    """Table-driven tests for the vendor search prompt."""
+
+    overwrite_test_data = False
+
+    def test_vendor_search_prompt_jinja_e2e(self) -> None:
+        """Run vendor search prompt scenarios from the test table."""
+        mock_history = [
+            mock_message(
+                content="We are getting married in Austin in 6 months.",
+                role=MessageRole.USER,
+            ),
+            mock_message(
+                content="We still need a florist and photographer.",
+                role=MessageRole.ASSISTANT,
+            ),
+        ]
+        test_cases: list[dict[str, Any]] = [
+            {
+                "name": "renders_vendor_search_prompt_with_history",
+                "prompt": VendorSearchPromptJinja(
+                    query="Can you find florist options in Austin?",
+                    history=mock_history,
+                ),
+                "fixture_name": "vendor_search_prompt",
+            },
+            {
+                "name": "renders_vendor_search_prompt_with_tool_results",
+                "prompt": VendorSearchPromptJinja(
+                    query="What Austin florists fit our budget?",
+                    history=mock_history,
+                    tool_results=[
+                        ToolResult(
+                            tool_call_id="call_1",
+                            content="Rose & Stem Florals lists packages from $2,500.",
+                        )
+                    ],
+                ),
+                "fixture_name": "vendor_search_prompt_with_tool_results",
+            },
+            {
+                "name": "renders_vendor_search_prompt_with_task",
+                "prompt": VendorSearchPromptJinja(
+                    query="Can you find florist options in Austin?",
+                    history=mock_history,
+                ),
+                "context": {"task": "Find Austin florists under $3,000."},
+                "fixture_name": "vendor_search_prompt_with_task",
+            },
+            {
+                "name": "renders_vendor_search_prompt_with_tool_context",
+                "prompt": VendorSearchPromptJinja(
+                    query="What Austin florists fit our budget?",
+                    history=mock_history,
+                    tool_descriptions=[WebSearchDefinition()],
+                    tool_results=[
+                        ToolResult(
+                            tool_call_id="call_1",
+                            content="Rose & Stem Florals lists packages from $2,500.",
+                        )
+                    ],
+                ),
+                "context": {"task": "Find Austin florists under $3,000."},
+                "fixture_name": "vendor_search_prompt_with_tool_context",
+            },
+        ]
+
+        for case in test_cases:
+            # ARRANGE
+            prompt = case["prompt"]
+            for key, value in case.get("context", {}).items():
+                prompt.update_context(**{key: value})
+
+            # ACT
+            rendered = prompt.render()
 
             # ASSERT
             self.assert_test_data(rendered, case["fixture_name"])

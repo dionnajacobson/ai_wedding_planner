@@ -8,7 +8,7 @@ from typing import Any
 from agents.agent import Agent, AgentRunner
 from agents.client.types import LLMRequest, LLMResponse, Model
 from agents.prompts.base import JinjaPrompt
-from agents.tools.registry import ToolRegistry
+from agents.tools.orchestrator import ToolOrchestrator
 from agents.tools.types import ToolCall, ToolName
 from tests.agents.mock_data import DaysUntilDateDefinition, DaysUntilDateExecutor
 
@@ -63,8 +63,9 @@ class TestAgentRunner:
 
         for case in test_cases:
             # ARRANGE
-            registry = ToolRegistry()
-            registry.register(ToolName.DAYS_UNTIL_DATE, DaysUntilDateExecutor())
+            orchestrator = ToolOrchestrator(
+                {ToolName.DAYS_UNTIL_DATE: DaysUntilDateExecutor()},
+            )
             prompt = _TestPrompt()
             agent = Agent(
                 name="Planner",
@@ -73,7 +74,7 @@ class TestAgentRunner:
                 prompt=prompt,
             )
             client = MockLLMClient(case["llm_responses"])
-            runner = AgentRunner(client, registry)
+            runner = AgentRunner(client, orchestrator)
 
             # ACT
             result = asyncio.run(runner.run(agent))

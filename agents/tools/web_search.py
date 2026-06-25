@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 from tavily import AsyncTavilyClient
 
 from agents.tools.protocols import ToolExecutor
 from agents.tools.types import ToolCall, ToolDefinition, ToolName, ToolResult
+
+if TYPE_CHECKING:
+    from agents.agent.types import Agent
 
 
 class WebSearchInput(BaseModel):
@@ -36,7 +39,10 @@ class WebSearchExecutor(ToolExecutor):
         """Initialize the executor with an optional Tavily client."""
         self._client = client or AsyncTavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
-    async def execute(self, tool_call: ToolCall) -> ToolResult:
+    async def execute(
+        self,
+        tool_call: ToolCall
+    ) -> ToolResult:
         """Run a Tavily search for the requested query."""
         search_input = WebSearchInput.model_validate(tool_call.arguments)
         content = await self._search(search_input.query)

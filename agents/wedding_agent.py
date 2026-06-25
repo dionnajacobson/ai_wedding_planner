@@ -3,8 +3,8 @@ import uuid
 
 from agents.agent import Agent, AgentRunner
 from agents.client.types import Model
-from agents.prompts.prompts import WeddingPromptJinja
-from agents.tools import WebSearchDefinition
+from agents.prompts.prompts import VendorSearchPromptJinja, WeddingPromptJinja
+from agents.tools.web_search import WebSearchDefinition
 from observability.logging import log_context
 from services.message_service import MessageService
 from services.types import Message, MessageRole
@@ -46,12 +46,19 @@ class WeddingAgent:
         with log_context(session_id=str(session_id)):
             logger.info("chat_started")
 
-            messages = self._message_service.get_messages(session_id)
-            prompt = WeddingPromptJinja(query=query, messages=messages)
-            agent = Agent(
-                name="Wedding Planner",
+            history = self._message_service.get_messages(session_id)
+            prompt = WeddingPromptJinja(query=query, history=history)
+            vendor_agent = Agent(
+                name="vendor_search",
+                agent_description="Helps find vendors for the wedding.",
                 model=Model.GPT_4O_MINI_2024_07_18,
                 tools=[WebSearchDefinition()],
+                prompt=VendorSearchPromptJinja(query=query, history=history),
+            )
+            agent = Agent(
+                name="wedding_planner",
+                model=Model.GPT_4O_MINI_2024_07_18,
+                tools=[vendor_agent],
                 prompt=prompt,
             )
             result = await self._runner.run(agent)

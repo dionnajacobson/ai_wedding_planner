@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
 from agents.tools.protocols import ToolExecutor
 from agents.tools.types import ToolCall, ToolDefinition, ToolName, ToolResult
+
+if TYPE_CHECKING:
+    from agents.agent.types import Agent
 
 
 class DaysUntilDateInput(BaseModel):
@@ -27,7 +31,13 @@ class DaysUntilDateDefinition(ToolDefinition):
 class DaysUntilDateExecutor(ToolExecutor):
     """Calculate how many days remain until a wedding or event date."""
 
-    async def execute(self, tool_call: ToolCall) -> ToolResult:
+    async def execute(
+        self,
+        tool_call: ToolCall,
+        *,
+        agents: dict[str, Agent] | None = None,
+        runner: Any | None = None,
+    ) -> ToolResult:
         """Return the number of days from today until the given date."""
         params = DaysUntilDateInput.model_validate(tool_call.arguments)
         target = date.fromisoformat(params.event_date)

@@ -1,0 +1,20 @@
+{% if history %}
+Conversation history:
+{{ history }}
+
+{% endif %}{% if query %}Latest message:
+{{ query }}
+{% endif %}{% if task %}
+Task:
+{{ task }}
+{% endif %}{% if tool_descriptions %}
+Available tools:
+
+{{ tool_descriptions }}
+{% endif %}{% if tool_results %}
+
+Tool results from this turn:
+{{ tool_results }}
+
+Use these tool results to answer the latest message. Do not treat them as conversation history.
+{% endif %}
