@@ -17,8 +17,7 @@ class MessageStore:
     @staticmethod
     def default() -> "MessageStore":
         """Get the default message store."""
-        session = SessionLocal()
-        message_store = MessageStore(db_session=session)
+        message_store = MessageStore(db_session=SessionLocal())
         return message_store
 
     def create_message(
@@ -55,6 +54,6 @@ class MessageStore:
         message = Message(
             content=record.content,
             id=record.id,
-            role=MessageRole(record.role.value),
+            role=record.role,
         )
         return message

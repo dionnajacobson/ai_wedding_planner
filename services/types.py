@@ -1,37 +1,37 @@
+from __future__ import annotations
+
 import uuid
-from enum import StrEnum
+from datetime import date
 
 from pydantic import BaseModel
 
-
-class MessageRole(StrEnum):
-    """Message role."""
-
-    USER = "user"
-    ASSISTANT = "assistant"
+from db.models import MessageRole
 
 
 class Client(BaseModel):
     """User model."""
 
-    id: uuid.UUID
-    first_name: str
-    last_name: str
     email: str
+    first_name: str
+    id: uuid.UUID
+    last_name: str
     wedding_id: uuid.UUID | None = None
 
 
 class Wedding(BaseModel):
     """Wedding model."""
 
-    id: uuid.UUID
+    budget: float | None = None
     client: Client
+    id: uuid.UUID
+    location: str | None = None
     session_ids: list[uuid.UUID]
+    wedding_date: date | None = None
 
 
 class Message(BaseModel):
     """Message model."""
 
+    content: str
     id: uuid.UUID
     role: MessageRole
-    content: str

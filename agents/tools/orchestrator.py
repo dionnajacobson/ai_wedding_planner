@@ -9,6 +9,7 @@ from typing import Any
 
 from agents.agent.types import Agent, ToolEntry
 from agents.tools.agent_tool import AgentToolDefinition, AgentToolExecutor, AgentToolInput
+from agents.tools.days_until_date import DaysUntilDateExecutor
 from agents.tools.protocols import ToolExecutor
 from agents.tools.types import ToolCall, ToolDefinition, ToolName, ToolResult, format_agent_name
 from agents.tools.web_search import WebSearchExecutor
@@ -27,8 +28,9 @@ class ToolOrchestrator:
     def default() -> ToolOrchestrator:
         """Return an orchestrator with the standard executor set."""
         executors = {
-            ToolName.WEB_SEARCH: WebSearchExecutor(),
             ToolName.AGENT_AS_TOOL: AgentToolExecutor(),
+            ToolName.DAYS_UNTIL_DATE: DaysUntilDateExecutor(),
+            ToolName.WEB_SEARCH: WebSearchExecutor(),
         }
         orchestrator = ToolOrchestrator(executors=executors)
         return orchestrator

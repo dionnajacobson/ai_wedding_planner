@@ -1,8 +1,10 @@
 import logging
 import uuid
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
+from agents.agent import AgentRunner
 from agents.client.errors import LLMAuthError, LLMError, LLMRateLimitError
 from agents.wedding_agent import WeddingAgent
 from api.schemas import (
@@ -12,7 +14,12 @@ from api.schemas import (
     StartChatRequest,
     StartChatResponse,
 )
+from db.database import get_db
+from services.client_service import ClientService
 from services.message_service import MessageService
+from services.stores.client_store import ClientStore
+from services.stores.message_store import MessageStore
+from services.stores.wedding_store import WeddingStore
 from services.wedding_service import WeddingService
 
 router = APIRouter(tags=["chat"])
@@ -20,9 +27,13 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/api/chat/start", response_model=StartChatResponse, status_code=201)
-def start_chat(body: StartChatRequest) -> StartChatResponse:
+def start_chat(body: StartChatRequest, db: Session = Depends(get_db)) -> StartChatResponse:
     """Create a client, wedding, and chat session."""
-    wedding_service = WeddingService.default()
+    client_store = ClientStore(db_session=db)
+    wedding_store = WeddingStore(db_session=db, client_store=client_store)
+    client_service = ClientService(store=client_store, wedding_store=wedding_store)
+    wedding_service = WeddingService(client_service=client_service, wedding_store=wedding_store)
+
     client = wedding_service.onboard_client(
         email=body.email,
         first_name=body.first_name,
@@ -38,9 +49,20 @@ def start_chat(body: StartChatRequest) -> StartChatResponse:
 
 
 @router.post("/api/chat", response_model=ChatResponse)
-async def send_message(body: ChatRequest) -> ChatResponse:
+async def send_message(body: ChatRequest, db: Session = Depends(get_db)) -> ChatResponse:
     """Send a message and receive the assistant reply."""
-    agent = WeddingAgent.default()
+    client_store = ClientStore(db_session=db)
+    wedding_store = WeddingStore(db_session=db, client_store=client_store)
+    client_service = ClientService(store=client_store, wedding_store=wedding_store)
+    message_store = MessageStore(db_session=db)
+    message_service = MessageService(store=message_store)
+    wedding_service = WeddingService(client_service=client_service, wedding_store=wedding_store)
+    agent = WeddingAgent(
+        message_service=message_service,
+        runner=AgentRunner.default(),
+        wedding_service=wedding_service,
+    )
+
     try:
         message = await agent.chat(
             query=body.message,
@@ -67,9 +89,10 @@ async def send_message(body: ChatRequest) -> ChatResponse:
 
 
 @router.get("/api/chat/{session_id}/messages", response_model=MessagesResponse)
-def get_messages(session_id: uuid.UUID) -> MessagesResponse:
+def get_messages(session_id: uuid.UUID, db: Session = Depends(get_db)) -> MessagesResponse:
     """Return the conversation history for a session."""
-    message_service = MessageService.default()
+    message_store = MessageStore(db_session=db)
+    message_service = MessageService(store=message_store)
     messages = message_service.get_messages(session_id)
     response = MessagesResponse(session_id=session_id, messages=messages)
     return response

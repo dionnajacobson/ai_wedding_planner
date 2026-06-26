@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Date, DateTime, Float, ForeignKey, String, Text, func
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -32,8 +34,8 @@ class Client(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    sessions: Mapped[list["WeddingSession"]] = relationship(back_populates="client")
-    wedding: Mapped["Wedding | None"] = relationship(
+    sessions: Mapped[list[WeddingSession]] = relationship(back_populates="client")
+    wedding: Mapped[Wedding | None] = relationship(
         back_populates="client",
         uselist=False,
     )
@@ -45,12 +47,15 @@ class Wedding(Base):
     __tablename__ = "weddings"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    budget: Mapped[float | None] = mapped_column(Float, nullable=True)
     client_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("clients.id"), nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+    wedding_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    location: Mapped[str | None] = mapped_column(String(500), nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -59,7 +64,7 @@ class Wedding(Base):
     )
 
     client: Mapped[Client] = relationship(back_populates="wedding")
-    sessions: Mapped[list["WeddingSession"]] = relationship(back_populates="wedding")
+    sessions: Mapped[list[WeddingSession]] = relationship(back_populates="wedding")
 
 
 class WeddingSession(Base):
@@ -85,7 +90,7 @@ class WeddingSession(Base):
     )
 
     client: Mapped[Client] = relationship(back_populates="sessions")
-    messages: Mapped[list["Message"]] = relationship(
+    messages: Mapped[list[Message]] = relationship(
         back_populates="session",
         cascade="all, delete-orphan",
         order_by="Message.created_at",

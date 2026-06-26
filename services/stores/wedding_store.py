@@ -19,9 +19,8 @@ class WeddingStore:
     @staticmethod
     def default() -> "WeddingStore":
         """Get the default wedding store."""
-        session = SessionLocal()
         client_store = ClientStore.default()
-        wedding_store = WeddingStore(db_session=session, client_store=client_store)
+        wedding_store = WeddingStore(db_session=SessionLocal(), client_store=client_store)
         return wedding_store
 
     def create_wedding(
@@ -40,8 +39,8 @@ class WeddingStore:
         self,
         client_id: uuid.UUID,
         wedding_id: uuid.UUID,
-    ) -> Wedding:
-        """Insert a session and return the persisted record."""
+    ) -> uuid.UUID:
+        """Insert a session and return its id."""
         record = db.WeddingSession(
             client_id=client_id,
             wedding_id=wedding_id,
@@ -69,8 +68,11 @@ class WeddingStore:
         client = self._client_store.get_client(client_id=record.client_id)
         session_ids = [session.id for session in record.sessions]
         wedding = Wedding(
+            budget=record.budget,
             client=client,
             id=record.id,
+            location=record.location,
             session_ids=session_ids,
+            wedding_date=record.wedding_date,
         )
         return wedding

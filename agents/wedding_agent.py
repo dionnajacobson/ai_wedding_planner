@@ -18,21 +18,21 @@ class WeddingAgent:
 
     def __init__(
         self,
-        runner: AgentRunner,
         message_service: MessageService,
+        runner: AgentRunner,
         wedding_service: WeddingService,
     ):
         """Initialize the wedding agent."""
-        self._runner = runner
         self._message_service = message_service
+        self._runner = runner
         self._wedding_service = wedding_service
 
     @staticmethod
     def default() -> "WeddingAgent":
         """Get the default wedding agent."""
         wedding_agent = WeddingAgent(
-            runner=AgentRunner.default(),
             message_service=MessageService.default(),
+            runner=AgentRunner.default(),
             wedding_service=WeddingService.default(),
         )
         return wedding_agent
