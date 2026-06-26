@@ -18,7 +18,7 @@ class ToolExecutor(Protocol):
         self,
         tool_call: ToolCall,
         *,
-        agents: dict[str, Agent] | None = None,
+        agent: Agent | None = None,
         runner: Any | None = None,
     ) -> ToolResult:
         """Run one tool call and return its text result."""

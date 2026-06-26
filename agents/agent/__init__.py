@@ -1,7 +1,6 @@
 from agents.agent.agent import AgentRunner
-from agents.agent.types import Agent, AgentRunResult, PreparedTools
-from agents.tools.agent_tool import AgentToolExecutor, AgentToolInput
-from agents.tools.types import AgentToolDefinition
+from agents.agent.types import Agent, AgentRunResult, ToolEntry
+from agents.tools.agent_tool import AgentToolDefinition, AgentToolExecutor, AgentToolInput
 
 __all__ = [
     "Agent",
@@ -10,5 +9,5 @@ __all__ = [
     "AgentToolDefinition",
     "AgentToolExecutor",
     "AgentToolInput",
-    "PreparedTools",
+    "ToolEntry",
 ]

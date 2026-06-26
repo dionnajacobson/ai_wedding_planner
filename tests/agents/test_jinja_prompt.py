@@ -5,6 +5,7 @@ from __future__ import annotations
 from agents.prompts.base import JinjaPrompt
 from agents.prompts.prompts import WeddingPromptJinja
 from agents.tools.types import ToolResult
+from agents.tools.web_search import WebSearchDefinition
 from services.types import MessageRole
 from tests.services.mock_data import mock_message
 
@@ -41,8 +42,6 @@ class TestJinjaPromptRuntimeContext:
 
     def test_format_tool_descriptions_renders_in_prompt(self) -> None:
         """Tool descriptions appear in prompts that include the shared partial."""
-        from agents.tools.web_search import WebSearchDefinition
-
         prompt = WeddingPromptJinja(
             query="Find florists in Austin.",
             tool_descriptions=[WebSearchDefinition()],

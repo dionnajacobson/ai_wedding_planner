@@ -24,6 +24,10 @@ alwaysApply: true
 - Functions and class methods should be alphabetized in files, starting with public at the top then private (e.g. "_") at the bottom
 - Input arguments should be alphabetized.
 
+# Imports
+
+- Keep imports at the top of the file. Do not import inside functions or methods.
+
 # Classes
 
 - Inject stateless dependencies in `__init__` (services, clients, runners, registries) and build stateful dependencies in the method that uses them (e.g. per-request `Agent`, prompts, and run config inside `chat()` rather than on the class).

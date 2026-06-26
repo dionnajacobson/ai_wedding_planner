@@ -35,7 +35,7 @@ class DaysUntilDateExecutor(ToolExecutor):
         self,
         tool_call: ToolCall,
         *,
-        agents: dict[str, Agent] | None = None,
+        agent: Agent | None = None,
         runner: Any | None = None,
     ) -> ToolResult:
         """Return the number of days from today until the given date."""

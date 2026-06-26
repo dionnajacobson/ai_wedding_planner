@@ -1,4 +1,4 @@
-"""Unit tests for agent-as-tool conversion."""
+"""Unit tests for agent-as-tool execution."""
 
 from __future__ import annotations
 
@@ -6,13 +6,13 @@ import asyncio
 from typing import Any
 from unittest.mock import Mock, patch
 
-from agents.agent import Agent, AgentRunner, AgentRunResult, AgentToolInput
+from agents.agent import Agent, AgentRunResult
 from agents.client.types import Model
 from agents.prompts.base import JinjaPrompt
 from agents.tools.agent_tool import AgentToolExecutor
 from agents.tools.orchestrator import ToolOrchestrator
 from agents.tools.protocols import ToolExecutor
-from agents.tools.types import AgentToolDefinition, ToolCall, ToolName, format_agent_name
+from agents.tools.types import ToolCall, ToolName, format_agent_name
 
 
 class _TaskPrompt(JinjaPrompt):
@@ -26,7 +26,7 @@ class _RecordingRunner:
         self.content = content
         self.agents: list[Agent] = []
         self._orchestrator = ToolOrchestrator(
-            {ToolName.AGENT_AS_TOOL: AgentToolExecutor(runner=self)},
+            executors={ToolName.AGENT_AS_TOOL: AgentToolExecutor(runner=self)},
         )
 
     async def run(self, agent: Agent) -> AgentRunResult:
@@ -35,79 +35,14 @@ class _RecordingRunner:
         return result
 
 
-class _ToolRunner:
-    """Minimal runner for prepare/resolve tests."""
-
-    def __init__(self) -> None:
-        self._orchestrator = ToolOrchestrator()
-
-
-class _UnusedClient:
-    """Placeholder client; prepare/resolve tests do not invoke the LLM."""
-
-
 class TestAgentAsTool:
-    """Table-driven tests for AgentRunner.agent_to_tool_definition() and AgentToolExecutor."""
-
-    def test_agent_to_tool_definition_builds_definition(self) -> None:
-        """Run definition-building scenarios from the test table."""
-        test_cases: list[dict[str, Any]] = [
-            {
-                "name": "uses_agent_as_tool_name_and_description",
-                "agent_kwargs": {
-                    "name": "Researcher",
-                    "agent_description": "Run the Researcher agent.",
-                },
-                "expected_name": ToolName.AGENT_AS_TOOL,
-                "expected_description": "Run the Researcher agent.",
-            },
-            {
-                "name": "defaults_description_from_agent_name",
-                "agent_kwargs": {
-                    "name": "Researcher",
-                },
-                "expected_name": ToolName.AGENT_AS_TOOL,
-                "expected_description": "Run the Researcher agent.",
-            },
-        ]
-
-        for case in test_cases:
-            agent = Agent(
-                model=Model.GPT_4O_MINI_2024_07_18,
-                prompt=_TaskPrompt(),
-                **case["agent_kwargs"],
-            )
-
-            definition = AgentRunner.agent_to_tool_definition(agent)
-
-            assert isinstance(definition, AgentToolDefinition)
-            assert definition.name == case["expected_name"]
-            assert definition.description == case["expected_description"]
-            assert definition.params_model is AgentToolInput
-            assert definition.agent_name == format_agent_name(agent.name)
-            assert definition.name_formatted == f"agent_as_tool_{format_agent_name(agent.name)}"
-
-    def test_prepare_tools_converts_agents(self) -> None:
-        """Sub-agents in tools are converted and indexed by name."""
-        sub_agent = Agent(
-            name="Researcher",
-            model=Model.GPT_4O_MINI_2024_07_18,
-            prompt=_TaskPrompt(),
-        )
-        runner = AgentRunner(client=_UnusedClient(), tool_orchestrator=ToolOrchestrator())
-
-        prepared = runner._prepare_tools([sub_agent])
-        tool_key = f"agent_as_tool_{format_agent_name(sub_agent.name)}"
-        definition = prepared.definitions[tool_key]
-
-        assert isinstance(definition, AgentToolDefinition)
-        assert prepared.agents[tool_key] is sub_agent
+    """Table-driven tests for agent-as-tool execution through the orchestrator."""
 
     def test_default_orchestrator_executes_agent_tool(self) -> None:
         """Run agent-as-tool execution scenarios from the test table."""
         test_cases: list[dict[str, Any]] = [
             {
-                "name": "applies_task_input_to_agent_prompt",
+                "name": "routes_provider_facing_name_to_sub_agent",
                 "tool_call": ToolCall(
                     id="call_1",
                     name="agent_as_tool",
@@ -133,18 +68,14 @@ class TestAgentAsTool:
                 name=f"agent_as_tool_{format_agent_name(sub_agent.name)}",
                 arguments=case["tool_call"].arguments,
             )
-            tool_runner = AgentRunner(client=runner, tool_orchestrator=runner._orchestrator)
-            prepared = tool_runner._prepare_tools([sub_agent])
-            tool_call = tool_runner._resolve_tool_calls(prepared, [tool_call])[0]
-
-            assert tool_call.name == ToolName.AGENT_AS_TOOL.value
-            assert tool_call.tool_key == f"agent_as_tool_{format_agent_name(sub_agent.name)}"
+            orchestrator = runner._orchestrator
+            entries = orchestrator.prepare([sub_agent])
 
             # ACT
             result = asyncio.run(
-                runner._orchestrator.execute_all(
+                orchestrator.execute_all(
                     [tool_call],
-                    agents=prepared.agents,
+                    entries=entries,
                     runner=runner,
                 ),
             )[0]

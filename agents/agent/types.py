@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from agents.client.types import Model
@@ -25,12 +23,13 @@ class Agent(BaseModel):
     agent_description: str | None = None
 
 
-@dataclass
-class PreparedTools:
-    """Tool schemas for the LLM and a side registry of sub-agents."""
+class ToolEntry(BaseModel):
+    """One tool exposed to the LLM, with an optional sub-agent to run on invocation."""
 
-    definitions: dict[str, ToolDefinition]
-    agents: dict[str, Agent] = field(default_factory=dict)
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    agent: Agent | None = None
+    definition: ToolDefinition
 
 
 class AgentRunResult(BaseModel):

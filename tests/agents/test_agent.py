@@ -64,7 +64,7 @@ class TestAgentRunner:
         for case in test_cases:
             # ARRANGE
             orchestrator = ToolOrchestrator(
-                {ToolName.DAYS_UNTIL_DATE: DaysUntilDateExecutor()},
+                executors={ToolName.DAYS_UNTIL_DATE: DaysUntilDateExecutor()},
             )
             prompt = _TestPrompt()
             agent = Agent(

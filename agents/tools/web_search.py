@@ -24,11 +24,11 @@ class WebSearchInput(BaseModel):
 class WebSearchDefinition(ToolDefinition):
     """Schema exposed to the LLM for the web_search tool."""
 
-    name: ToolName = ToolName.WEB_SEARCH
     description: str = (
         "Search the web for current information about venues, vendors, "
         "pricing, trends, and other wedding planning topics."
     )
+    name: ToolName = ToolName.WEB_SEARCH
     params_model: type[BaseModel] = WebSearchInput
 
 
@@ -43,13 +43,13 @@ class WebSearchExecutor(ToolExecutor):
         self,
         tool_call: ToolCall,
         *,
-        agents: dict[str, Agent] | None = None,
+        agent: Agent | None = None,
         runner: Any | None = None,
     ) -> ToolResult:
         """Run a Tavily search for the requested query."""
         search_input = WebSearchInput.model_validate(tool_call.arguments)
         content = await self._search(search_input.query)
-        result = ToolResult(tool_call_id=tool_call.id, content=content)
+        result = ToolResult(content=content, tool_call_id=tool_call.id)
         return result
 
     async def _search(self, query: str) -> str:

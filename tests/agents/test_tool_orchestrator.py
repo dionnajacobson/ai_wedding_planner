@@ -1,15 +1,63 @@
 """Unit tests for the tool orchestrator."""
 
+from __future__ import annotations
+
 import asyncio
 from typing import Any
 
+from agents.agent import Agent, AgentToolInput
+from agents.client.types import Model
+from agents.prompts.base import JinjaPrompt
+from agents.tools.agent_tool import AgentToolDefinition
 from agents.tools.orchestrator import ToolOrchestrator
-from agents.tools.types import ToolCall, ToolName
-from tests.agents.mock_data import DaysUntilDateExecutor
+from agents.tools.types import ToolCall, ToolName, format_agent_name
+from tests.agents.mock_data import DaysUntilDateDefinition, DaysUntilDateExecutor
+
+
+class _TaskPrompt(JinjaPrompt):
+    template_name = "base.jinja"
 
 
 class TestToolOrchestrator:
     """Table-driven tests for ToolOrchestrator."""
+
+    def test_agent_to_tool_definition(self) -> None:
+        """Run agent-as-tool definition scenarios from the test table."""
+        test_cases: list[dict[str, Any]] = [
+            {
+                "name": "uses_agent_as_tool_name_and_description",
+                "agent_kwargs": {
+                    "name": "Researcher",
+                    "agent_description": "Run the Researcher agent.",
+                },
+                "expected_description": "Run the Researcher agent.",
+            },
+            {
+                "name": "defaults_description_from_agent_name",
+                "agent_kwargs": {
+                    "name": "Researcher",
+                },
+                "expected_description": "Run the Researcher agent.",
+            },
+        ]
+
+        orchestrator = ToolOrchestrator()
+
+        for case in test_cases:
+            agent = Agent(
+                model=Model.GPT_4O_MINI_2024_07_18,
+                prompt=_TaskPrompt(),
+                **case["agent_kwargs"],
+            )
+            tool_name = f"agent_as_tool_{format_agent_name(agent.name)}"
+            definition = orchestrator._agent_to_tool_definition(agent)
+
+            assert isinstance(definition, AgentToolDefinition)
+            assert definition.name == ToolName.AGENT_AS_TOOL
+            assert definition.description == case["expected_description"]
+            assert definition.params_model is AgentToolInput
+            assert definition.agent_name == format_agent_name(agent.name)
+            assert definition.name_formatted == tool_name
 
     def test_execute(self) -> None:
         """Run execute scenarios from the test table."""
@@ -30,7 +78,7 @@ class TestToolOrchestrator:
         for case in test_cases:
             # ARRANGE
             orchestrator = ToolOrchestrator(
-                {ToolName.DAYS_UNTIL_DATE: case["executor"]},
+                executors={ToolName.DAYS_UNTIL_DATE: case["executor"]},
             )
 
             # ACT
@@ -40,3 +88,37 @@ class TestToolOrchestrator:
             assert result.tool_call_id == case["expected_tool_call_id"]
             if case["content_is_digit"]:
                 assert result.content.isdigit()
+
+    def test_prepare(self) -> None:
+        """Run prepare scenarios from the test table."""
+        test_cases: list[dict[str, Any]] = [
+            {
+                "name": "wraps_tool_definitions",
+                "tools": [DaysUntilDateDefinition()],
+                "expected_entry_count": 1,
+                "expected_agent_count": 0,
+                "expected_tool_name": ToolName.DAYS_UNTIL_DATE,
+            },
+            {
+                "name": "wraps_sub_agents",
+                "tools": [
+                    Agent(
+                        name="Researcher",
+                        model=Model.GPT_4O_MINI_2024_07_18,
+                        prompt=_TaskPrompt(),
+                    ),
+                ],
+                "expected_entry_count": 1,
+                "expected_agent_count": 1,
+                "expected_tool_name": ToolName.AGENT_AS_TOOL,
+            },
+        ]
+
+        orchestrator = ToolOrchestrator()
+
+        for case in test_cases:
+            entries = orchestrator.prepare(case["tools"])
+
+            assert len(entries) == case["expected_entry_count"]
+            assert sum(entry.agent is not None for entry in entries) == case["expected_agent_count"]
+            assert entries[0].definition.name == case["expected_tool_name"]

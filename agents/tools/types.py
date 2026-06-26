@@ -29,8 +29,8 @@ class ToolDefinition(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    name: ToolName
     description: str
+    name: ToolName
     params_model: type[BaseModel]
 
     @property
@@ -39,28 +39,16 @@ class ToolDefinition(BaseModel):
         return self.name.value
 
 
-class AgentToolDefinition(ToolDefinition):
-    """Schema-only tool definition for an agent exposed as a tool."""
-
-    agent_name: str
-
-    @property
-    def name_formatted(self) -> str:
-        """Return the provider-facing tool name."""
-        return f"{self.name.value}_{self.agent_name}"
-
-
 class ToolCall(BaseModel):
     """A tool invocation requested by an LLM."""
 
+    arguments: dict[str, Any] = Field(default_factory=dict)
     id: str
     name: str
-    arguments: dict[str, Any] = Field(default_factory=dict)
-    tool_key: str | None = None
 
 
 class ToolResult(BaseModel):
     """Text output returned for one tool call."""
 
-    tool_call_id: str
     content: str
+    tool_call_id: str
