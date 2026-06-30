@@ -69,31 +69,47 @@
       </section>
 
       <section id="chat-panel" class="chat-panel" aria-label="Chat" hidden>
-        <div class="chat-toolbar">
-          <p id="welcome-text" class="welcome-text"></p>
-          <button type="button" id="new-session-button" class="text-button">
-            New session
-          </button>
-        </div>
-        <div id="messages" class="messages" role="log" aria-live="polite"></div>
+        <div class="chat-layout">
+          <div class="chat-main">
+            <div class="chat-toolbar">
+              <p id="welcome-text" class="welcome-text"></p>
+              <button type="button" id="new-session-button" class="text-button">
+                New session
+              </button>
+            </div>
+            <div id="messages" class="messages" role="log" aria-live="polite"></div>
 
-        <div id="status" class="status" hidden>
-          <span class="status-dot"></span>
-          <span id="status-text">Starting your session…</span>
-        </div>
+            <div id="status" class="status" hidden>
+              <span class="status-dot"></span>
+              <span id="status-text">Starting your session…</span>
+            </div>
 
-        <form id="chat-form" class="composer" autocomplete="off">
-          <label class="sr-only" for="message-input">Message</label>
-          <textarea
-            id="message-input"
-            rows="1"
-            placeholder="Ask about venues, timelines, vendors, or what to tackle next…"
-            disabled
-          ></textarea>
-          <button type="submit" id="send-button" disabled aria-label="Send message">
-            Send
-          </button>
-        </form>
+            <form id="chat-form" class="composer" autocomplete="off">
+              <label class="sr-only" for="message-input">Message</label>
+              <textarea
+                id="message-input"
+                rows="1"
+                placeholder="Ask about venues, timelines, vendors, or what to tackle next…"
+                disabled
+              ></textarea>
+              <button type="submit" id="send-button" disabled aria-label="Send message">
+                Send
+              </button>
+            </form>
+          </div>
+
+          <aside id="wedding-panel" class="wedding-panel" aria-label="Wedding profile">
+            <div class="wedding-panel-header">
+              <h2>Your wedding</h2>
+              <p class="wedding-panel-copy">Details saved during planning appear here.</p>
+            </div>
+            <div id="wedding-summary" class="wedding-summary"></div>
+            <details class="wedding-json-details">
+              <summary>View raw JSON</summary>
+              <pre id="wedding-json" class="wedding-json"></pre>
+            </details>
+          </aside>
+        </div>
       </section>
     </main>
 

@@ -4,17 +4,58 @@ import uuid
 from datetime import date, datetime
 from enum import StrEnum
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, String, Text, func
+from sqlalchemy import Date, DateTime, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+class BudgetCategory(StrEnum):
+    """Budget line item categories."""
+
+    ATTIRE = "attire"
+    CATERING = "catering"
+    DECOR = "decor"
+    FLOWERS = "flowers"
+    MUSIC = "music"
+    OTHER = "other"
+    PHOTOGRAPHY = "photography"
+    STATIONERY = "stationery"
+    TRANSPORTATION = "transportation"
+    VENUE = "venue"
+    VIDEOGRAPHY = "videography"
 
 
 class MessageRole(StrEnum):
     """Role of a message in a wedding planning conversation."""
 
-    USER = "user"
     ASSISTANT = "assistant"
+    USER = "user"
+
+
+class VendorCategory(StrEnum):
+    """Vendor types tracked for a wedding."""
+
+    ATTIRE = "attire"
+    CATERING = "catering"
+    DECOR = "decor"
+    FLOWERS = "flowers"
+    MUSIC = "music"
+    OTHER = "other"
+    PHOTOGRAPHY = "photography"
+    STATIONERY = "stationery"
+    TRANSPORTATION = "transportation"
+    VENUE = "venue"
+    VIDEOGRAPHY = "videography"
+
+
+class VendorStatus(StrEnum):
+    """Progress state for a vendor shortlist entry."""
+
+    BOOKED = "booked"
+    CONTACTED = "contacted"
+    DECLINED = "declined"
+    RESEARCHING = "researching"
 
 
 class Base(DeclarativeBase):
@@ -47,24 +88,106 @@ class Wedding(Base):
     __tablename__ = "weddings"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    budget: Mapped[float | None] = mapped_column(Float, nullable=True)
+    budget_cap: Mapped[float | None] = mapped_column(Float, nullable=True)
     client_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("clients.id"), nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    wedding_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    guest_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     location: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    style: Mapped[list[str]] = mapped_column(
+        ARRAY(String(255)),
+        nullable=False,
+        server_default="{}",
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
     )
+    wedding_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
+    budget_items: Mapped[list[BudgetItem]] = relationship(
+        back_populates="wedding",
+        cascade="all, delete-orphan",
+        order_by="BudgetItem.created_at",
+    )
     client: Mapped[Client] = relationship(back_populates="wedding")
     sessions: Mapped[list[WeddingSession]] = relationship(back_populates="wedding")
+    vendors: Mapped[list[WeddingVendor]] = relationship(
+        back_populates="wedding",
+        cascade="all, delete-orphan",
+        order_by="WeddingVendor.created_at",
+    )
+
+
+class BudgetItem(Base):
+    """A planned or actual expense line on the wedding budget."""
+
+    __tablename__ = "budget_items"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    actual_amount: Mapped[float | None] = mapped_column(Float, nullable=True)
+    category: Mapped[BudgetCategory] = mapped_column(
+        SAEnum(BudgetCategory, native_enum=False),
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    estimated_amount: Mapped[float] = mapped_column(Float, nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+    wedding_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("weddings.id"), nullable=False
+    )
+
+    wedding: Mapped[Wedding] = relationship(back_populates="budget_items")
+
+
+class WeddingVendor(Base):
+    """A vendor the couple is researching or has booked."""
+
+    __tablename__ = "wedding_vendors"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    category: Mapped[VendorCategory] = mapped_column(
+        SAEnum(VendorCategory, native_enum=False),
+        nullable=False,
+    )
+    contact_info: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    estimated_cost: Mapped[float | None] = mapped_column(Float, nullable=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[VendorStatus] = mapped_column(
+        SAEnum(VendorStatus, native_enum=False),
+        nullable=False,
+        default=VendorStatus.RESEARCHING,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+    wedding_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("weddings.id"), nullable=False
+    )
+
+    wedding: Mapped[Wedding] = relationship(back_populates="vendors")
 
 
 class WeddingSession(Base):

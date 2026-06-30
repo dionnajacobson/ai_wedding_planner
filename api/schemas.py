@@ -2,7 +2,7 @@ import uuid
 
 from pydantic import BaseModel, Field
 
-from services.types import Message
+from services.types import Message, Wedding
 
 
 class StartChatRequest(BaseModel):
@@ -36,5 +36,12 @@ class ChatResponse(BaseModel):
 class MessagesResponse(BaseModel):
     """Full conversation history for a session."""
 
-    session_id: uuid.UUID
     messages: list[Message]
+    session_id: uuid.UUID
+
+
+class WeddingResponse(BaseModel):
+    """Wedding profile for the chat UI sidebar."""
+
+    session_id: uuid.UUID
+    wedding: Wedding

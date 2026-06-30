@@ -13,6 +13,7 @@ from api.schemas import (
     MessagesResponse,
     StartChatRequest,
     StartChatResponse,
+    WeddingResponse,
 )
 from db.database import get_db
 from services.client_service import ClientService
@@ -94,5 +95,21 @@ def get_messages(session_id: uuid.UUID, db: Session = Depends(get_db)) -> Messag
     message_store = MessageStore(db_session=db)
     message_service = MessageService(store=message_store)
     messages = message_service.get_messages(session_id)
-    response = MessagesResponse(session_id=session_id, messages=messages)
+    response = MessagesResponse(messages=messages, session_id=session_id)
+    return response
+
+
+@router.get("/api/chat/{session_id}/wedding", response_model=WeddingResponse)
+def get_wedding(session_id: uuid.UUID, db: Session = Depends(get_db)) -> WeddingResponse:
+    """Return the wedding profile linked to a chat session."""
+    client_store = ClientStore(db_session=db)
+    wedding_store = WeddingStore(client_store=client_store, db_session=db)
+    client_service = ClientService(store=client_store, wedding_store=wedding_store)
+    wedding_service = WeddingService(client_service=client_service, wedding_store=wedding_store)
+
+    wedding = wedding_service.get_wedding_by_session_id(session_id)
+    if wedding is None:
+        raise HTTPException(status_code=404, detail=f"Session not found: {session_id}")
+
+    response = WeddingResponse(session_id=session_id, wedding=wedding)
     return response

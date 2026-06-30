@@ -18,6 +18,136 @@ const formEl = document.getElementById("chat-form");
 const inputEl = document.getElementById("message-input");
 const sendButtonEl = document.getElementById("send-button");
 
+const weddingJsonEl = document.getElementById("wedding-json");
+const weddingSummaryEl = document.getElementById("wedding-summary");
+
+/** Format a number as USD currency. */
+function formatCurrency(value) {
+  if (value === null || value === undefined) {
+    return "—";
+  }
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+/** Format an ISO date string for display. */
+function formatDate(value) {
+  if (!value) {
+    return "—";
+  }
+  const parsed = new Date(`${value}T00:00:00`);
+  return parsed.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+/** Format an enum-like string for display. */
+function formatLabel(value) {
+  if (!value) {
+    return "—";
+  }
+  return value.replaceAll("_", " ");
+}
+
+/** Build a labeled field row for the wedding sidebar. */
+function createField(label, value) {
+  const row = document.createElement("div");
+  row.className = "wedding-field";
+
+  const labelEl = document.createElement("span");
+  labelEl.textContent = label;
+
+  const valueEl = document.createElement("span");
+  valueEl.textContent = value;
+
+  row.append(labelEl, valueEl);
+  return row;
+}
+
+/** Build a titled section in the wedding sidebar. */
+function createSection(title) {
+  const section = document.createElement("section");
+  section.className = "wedding-section";
+
+  const heading = document.createElement("h3");
+  heading.textContent = title;
+  section.appendChild(heading);
+  return section;
+}
+
+/** Render the wedding profile sidebar from API data. */
+function renderWeddingProfile(wedding) {
+  weddingSummaryEl.innerHTML = "";
+  weddingJsonEl.textContent = JSON.stringify(wedding, null, 2);
+
+  const basics = createSection("Basics");
+  basics.append(
+    createField("Date", formatDate(wedding.wedding_date)),
+    createField("Location", wedding.location || "—"),
+    createField("Guests", wedding.guest_count ?? "—"),
+    createField("Style", wedding.style.length > 0 ? wedding.style.join(", ") : "—")
+  );
+
+  const budget = createSection("Budget");
+  budget.append(
+    createField("Budget cap", formatCurrency(wedding.budget_cap)),
+    createField("Allocated", formatCurrency(wedding.budget.allocated)),
+    createField("Remaining", formatCurrency(wedding.budget.remaining))
+  );
+
+  if (wedding.budget.items.length > 0) {
+    const list = document.createElement("ul");
+    list.className = "wedding-list";
+    wedding.budget.items.forEach((item) => {
+      const entry = document.createElement("li");
+      entry.textContent = `${formatLabel(item.category)} · ${item.name} · ${formatCurrency(item.estimated_amount)}`;
+      list.appendChild(entry);
+    });
+    budget.appendChild(list);
+  }
+
+  const vendors = createSection("Vendors");
+  if (wedding.vendors.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "wedding-empty";
+    empty.textContent = "No vendors saved yet.";
+    vendors.appendChild(empty);
+  } else {
+    const list = document.createElement("ul");
+    list.className = "wedding-list";
+    wedding.vendors.forEach((vendor) => {
+      const entry = document.createElement("li");
+      entry.textContent = `${formatLabel(vendor.category)} · ${vendor.name} · ${formatLabel(vendor.status)}`;
+      list.appendChild(entry);
+    });
+    vendors.appendChild(list);
+  }
+
+  const sections = [basics, budget, vendors];
+  if (wedding.notes) {
+    const notes = createSection("Notes");
+    const copy = document.createElement("p");
+    copy.className = "wedding-empty";
+    copy.textContent = wedding.notes;
+    notes.appendChild(copy);
+    sections.push(notes);
+  }
+
+  weddingSummaryEl.append(...sections);
+}
+
+/** Load the wedding profile for the active session. */
+async function loadWeddingProfile(sessionId) {
+  const response = await api(`/api/chat/${sessionId}/wedding`);
+  renderWeddingProfile(response.wedding);
+  return response.wedding;
+}
+
 /** Update the status line shown below the message list. */
 function setStatus(text, visible = true) {
   statusTextEl.textContent = text;
@@ -35,6 +165,8 @@ function showOnboarding(user = null) {
   onboardingPanelEl.hidden = false;
   chatPanelEl.hidden = true;
   messagesEl.innerHTML = "";
+  weddingSummaryEl.innerHTML = "";
+  weddingJsonEl.textContent = "";
   window.sessionId = null;
   setStatus("", false);
   setComposerEnabled(false);
@@ -139,6 +271,7 @@ async function openChat(sessionId, user) {
   setComposerEnabled(true);
   inputEl.focus();
   window.sessionId = sessionId;
+  await loadWeddingProfile(sessionId);
 }
 
 /** Initialize the app from saved session data or show onboarding. */
@@ -220,6 +353,7 @@ formEl.addEventListener("submit", async (event) => {
   try {
     const result = await sendMessage(window.sessionId, message);
     appendMessage(result.message.role, result.message.content);
+    await loadWeddingProfile(window.sessionId);
     setStatus("", false);
   } catch (error) {
     appendMessage(

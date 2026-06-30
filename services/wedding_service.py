@@ -2,7 +2,7 @@ import uuid
 
 from services.client_service import ClientService
 from services.stores.wedding_store import WeddingStore
-from services.types import Client
+from services.types import Client, Wedding
 
 
 class WeddingService:
@@ -41,6 +41,11 @@ class WeddingService:
             wedding_id=wedding.id,
         )
         return session_id
+
+    def get_wedding_by_session_id(self, session_id: uuid.UUID) -> Wedding | None:
+        """Return the wedding profile for a chat session."""
+        wedding = self._wedding_store.get_wedding_by_session_id(session_id)
+        return wedding
 
     def onboard_client(
         self,
