@@ -8,6 +8,9 @@ from unittest.mock import AsyncMock
 
 import mcp.types as mcp_types
 
+from agents.agent import Agent
+from agents.client.types import Model
+from agents.prompts.prompts import VendorSearchPromptJinja
 from agents.tools.mcp import McpClientManager, McpServer, McpToolDefinition, McpToolExecutor
 from agents.tools.mcp.client_manager import McpClientManager as ClientManagerClass
 from agents.tools.orchestrator import ToolOrchestrator
@@ -94,14 +97,20 @@ class TestMcpOrchestratorIntegration:
             )
             client = AsyncMock(spec=McpClientManager)
             client.connect_server.return_value = [definition]
-            client.servers_for_tools.return_value = (case["server"],)
+            client.servers_for_agent.return_value = (case["server"],)
             orchestrator = ToolOrchestrator(
                 executors={ToolName.MCP: McpToolExecutor(client=client)},
                 mcp_client=client,
             )
+            agent = Agent(
+                mcp_servers=["filesystem"],
+                model=Model.GPT_4O_MINI_2024_07_18,
+                name="vendor_search",
+                prompt=VendorSearchPromptJinja(query="Find florists", history=[]),
+            )
 
             # ACT
-            entries = asyncio.run(orchestrator.prepare([case["server"]]))
+            entries = asyncio.run(orchestrator.prepare(agent))
 
             # ASSERT
             assert len(entries) == 1

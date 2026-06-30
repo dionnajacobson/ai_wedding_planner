@@ -128,6 +128,44 @@ class TestMcpConfigLoader:
         )
         assert server.url == "https://example.com/mcp"
 
+    def test_get_mcp_servers_loads_apify_vendor_scraper(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Load Apify MCP server settings for the wedding vendor scraper."""
+        monkeypatch.setenv("APIFY_API_TOKEN", "apify-token")
+        config_path = tmp_path / "apify.json"
+        config_path.write_text(
+            json.dumps(
+                {
+                    "mcp_servers": [
+                        {
+                            "name": "apify",
+                            "enabled": True,
+                            "transport": "streamable_http",
+                            "url": (
+                                "https://mcp.apify.com?"
+                                "tools=fortuitous_pirate/wedding-vendor-scraper,get-actor-output"
+                            ),
+                            "headers": {
+                                "Authorization": "Bearer ${APIFY_API_TOKEN}",
+                            },
+                        }
+                    ]
+                }
+            ),
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("MCP_CONFIG_PATH", str(config_path))
+
+        servers = get_mcp_servers()
+
+        assert len(servers) == 1
+        assert servers[0].name == "apify"
+        assert servers[0].headers == {"Authorization": "Bearer apify-token"}
+        assert "fortuitous_pirate/wedding-vendor-scraper" in (servers[0].url or "")
+
     def test_get_mcp_servers_is_cached(
         self,
         tmp_path: Path,

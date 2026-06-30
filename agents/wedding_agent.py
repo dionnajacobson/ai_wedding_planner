@@ -52,6 +52,7 @@ class WeddingAgent:
                 name="vendor_search",
                 agent_description="Helps find vendors for the wedding.",
                 model=Model.GPT_4O_MINI_2024_07_18,
+                mcp_servers=["apify"],
                 tools=[WebSearchDefinition()],
                 prompt=VendorSearchPromptJinja(query=query, history=history),
             )

@@ -108,13 +108,20 @@ class TestToolOrchestrator:
         )
         client = AsyncMock(spec=McpClientManager)
         client.connect_server.return_value = [definition]
-        client.servers_for_tools.return_value = (server,)
+        client.servers_for_agent.return_value = (server,)
         orchestrator = ToolOrchestrator(
             executors={ToolName.MCP: McpToolExecutor(client=client)},
             mcp_client=client,
         )
+        agent = Agent(
+            mcp_servers=["filesystem"],
+            model=Model.GPT_4O_MINI_2024_07_18,
+            name="test",
+            prompt=_TaskPrompt(),
+            tools=[DaysUntilDateDefinition()],
+        )
 
-        entries = asyncio.run(orchestrator.prepare([DaysUntilDateDefinition()]))
+        entries = asyncio.run(orchestrator.prepare(agent))
 
         assert len(entries) == 2
         assert entries[0].definition.name_formatted == "mcp_filesystem_read_file"
@@ -149,7 +156,13 @@ class TestToolOrchestrator:
         orchestrator = ToolOrchestrator()
 
         for case in test_cases:
-            entries = asyncio.run(orchestrator.prepare(case["tools"]))
+            agent = Agent(
+                model=Model.GPT_4O_MINI_2024_07_18,
+                name="test",
+                prompt=_TaskPrompt(),
+                tools=case["tools"],
+            )
+            entries = asyncio.run(orchestrator.prepare(agent))
 
             assert len(entries) == case["expected_entry_count"]
             assert sum(entry.agent is not None for entry in entries) == case["expected_agent_count"]

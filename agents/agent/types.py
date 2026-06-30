@@ -6,7 +6,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from agents.client.types import Model
 from agents.prompts.base import JinjaPrompt
-from agents.tools.mcp.config import McpServer
 from agents.tools.types import ToolDefinition, ToolResult
 
 
@@ -18,7 +17,8 @@ class Agent(BaseModel):
     name: str
     model: Model
     prompt: JinjaPrompt
-    tools: list[ToolDefinition | Agent | McpServer] = Field(default_factory=list)
+    tools: list[ToolDefinition | Agent] = Field(default_factory=list)
+    mcp_servers: list[str] = Field(default_factory=list)
     max_tool_rounds: int = Field(default=10, ge=1)
     max_tokens: int = Field(default=1024, ge=1)
     agent_description: str | None = None

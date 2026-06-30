@@ -35,7 +35,7 @@ class AgentRunner:
 
     async def run(self, agent: Agent) -> AgentRunResult:
         """Run the agent until it returns text or hits the tool round limit."""
-        entries = await self._tool_orchestrator.prepare(agent.tools)
+        entries = await self._tool_orchestrator.prepare(agent)
         llm_tools = [entry.definition for entry in entries] or None
 
         tool_results: list[ToolResult] = []

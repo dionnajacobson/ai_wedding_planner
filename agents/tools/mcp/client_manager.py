@@ -78,15 +78,19 @@ class McpClientManager:
         )
         return definitions
 
-    def servers_for_tools(
-        self,
-        agent_servers: tuple[McpServer, ...] | list[McpServer] = (),
-    ) -> tuple[McpServer, ...]:
-        """Merge configured servers with agent-declared MCP server overrides."""
+    def servers_for_agent(self, server_names: list[str]) -> tuple[McpServer, ...]:
+        """Return configured MCP servers referenced by name on an agent."""
+        if not server_names:
+            return ()
+
         servers_by_name = {server.name: server for server in self._servers}
-        for server in agent_servers:
-            servers_by_name[server.name] = server
-        merged = tuple(servers_by_name.values())
+        selected: list[McpServer] = []
+        for name in server_names:
+            server = servers_by_name.get(name)
+            if server is None:
+                raise ValueError(f"Unknown MCP server: {name}")
+            selected.append(server)
+        merged = tuple(selected)
         return merged
 
     async def shutdown(self) -> None:

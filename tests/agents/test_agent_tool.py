@@ -69,8 +69,14 @@ class TestAgentAsTool:
                 name=f"agent_as_tool_{format_agent_name(sub_agent.name)}",
                 arguments=case["tool_call"].arguments,
             )
+            parent_agent = Agent(
+                model=Model.GPT_4O_MINI_2024_07_18,
+                name="parent",
+                prompt=_TaskPrompt(),
+                tools=[sub_agent],
+            )
             orchestrator = runner._orchestrator
-            entries = asyncio.run(orchestrator.prepare([sub_agent]))
+            entries = asyncio.run(orchestrator.prepare(parent_agent))
 
             # ACT
             result = asyncio.run(
