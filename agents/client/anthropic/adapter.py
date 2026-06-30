@@ -71,10 +71,14 @@ class AnthropicAdapter(LLMAdapter):
 
     def _format_tool(self, tool: ToolDefinition) -> dict[str, Any]:
         """Convert one tool definition into an Anthropic tool payload."""
+        if tool.params_schema is not None:
+            input_schema = tool.params_schema
+        else:
+            input_schema = to_strict_json_schema(tool.params_model)
         tool_payload = {
             "name": tool.name_formatted,
             "description": tool.description,
-            "input_schema": to_strict_json_schema(tool.params_model),
+            "input_schema": input_schema,
         }
         return tool_payload
 

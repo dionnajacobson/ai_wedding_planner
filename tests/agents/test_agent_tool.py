@@ -10,6 +10,7 @@ from agents.agent import Agent, AgentRunResult
 from agents.client.types import Model
 from agents.prompts.base import JinjaPrompt
 from agents.tools.agent_tool import AgentToolExecutor
+from agents.tools.mcp import McpToolExecutor
 from agents.tools.orchestrator import ToolOrchestrator
 from agents.tools.protocols import ToolExecutor
 from agents.tools.types import ToolCall, ToolName, format_agent_name
@@ -69,7 +70,7 @@ class TestAgentAsTool:
                 arguments=case["tool_call"].arguments,
             )
             orchestrator = runner._orchestrator
-            entries = orchestrator.prepare([sub_agent])
+            entries = asyncio.run(orchestrator.prepare([sub_agent]))
 
             # ACT
             result = asyncio.run(
@@ -98,6 +99,8 @@ class TestAgentAsTool:
 
         web_search = orchestrator._get_executor(ToolName.WEB_SEARCH)
         agent_tool = orchestrator._get_executor(ToolName.AGENT_AS_TOOL)
+        mcp_tool = orchestrator._get_executor(ToolName.MCP)
 
         assert web_search is not None
         assert isinstance(agent_tool, AgentToolExecutor)
+        assert isinstance(mcp_tool, McpToolExecutor)

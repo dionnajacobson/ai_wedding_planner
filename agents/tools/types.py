@@ -6,7 +6,7 @@ import re
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 def format_agent_name(name: str) -> str:
@@ -21,6 +21,7 @@ class ToolName(StrEnum):
 
     AGENT_AS_TOOL = "agent_as_tool"
     DAYS_UNTIL_DATE = "days_until_date"
+    MCP = "mcp"
     WEB_SEARCH = "web_search"
 
 
@@ -31,12 +32,28 @@ class ToolDefinition(BaseModel):
 
     description: str
     name: ToolName
-    params_model: type[BaseModel]
+    params_model: type[BaseModel] | None = None
+    params_schema: dict[str, Any] | None = None
 
     @property
     def name_formatted(self) -> str:
         """Return the provider-facing tool name."""
         return self.name.value
+
+    @model_validator(mode="after")
+    def validate_schema_source(self) -> ToolDefinition:
+        """Require either a Pydantic model or a JSON schema."""
+        if self.params_model is None and self.params_schema is None:
+            raise ValueError("Either params_model or params_schema is required")
+        return self
+
+
+def format_mcp_tool_name(server_name: str, tool_name: str) -> str:
+    """Build a provider-safe tool name for an MCP tool."""
+    server_slug = format_agent_name(server_name)
+    tool_slug = format_agent_name(tool_name)
+    formatted = f"{ToolName.MCP.value}_{server_slug}_{tool_slug}"
+    return formatted
 
 
 class ToolCall(BaseModel):

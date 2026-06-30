@@ -10,6 +10,9 @@ from typing import Any
 from agents.agent.types import Agent, ToolEntry
 from agents.tools.agent_tool import AgentToolDefinition, AgentToolExecutor, AgentToolInput
 from agents.tools.days_until_date import DaysUntilDateExecutor
+from agents.tools.mcp.client_manager import McpClientManager
+from agents.tools.mcp.config import McpServer
+from agents.tools.mcp.tool import McpToolExecutor
 from agents.tools.protocols import ToolExecutor
 from agents.tools.types import ToolCall, ToolDefinition, ToolName, ToolResult, format_agent_name
 from agents.tools.web_search import WebSearchExecutor
@@ -20,19 +23,26 @@ logger = logging.getLogger(__name__)
 class ToolOrchestrator:
     """Execute tool calls and aggregate results."""
 
-    def __init__(self, executors: dict[ToolName, ToolExecutor] | None = None) -> None:
+    def __init__(
+        self,
+        executors: dict[ToolName, ToolExecutor] | None = None,
+        mcp_client: McpClientManager | None = None,
+    ) -> None:
         """Initialize with a tool-name to executor mapping."""
         self._executors = executors or {}
+        self._mcp_client = mcp_client or McpClientManager.default()
 
     @staticmethod
     def default() -> ToolOrchestrator:
         """Return an orchestrator with the standard executor set."""
+        mcp_client = McpClientManager.default()
         executors = {
             ToolName.AGENT_AS_TOOL: AgentToolExecutor(),
             ToolName.DAYS_UNTIL_DATE: DaysUntilDateExecutor(),
+            ToolName.MCP: McpToolExecutor(client=mcp_client),
             ToolName.WEB_SEARCH: WebSearchExecutor(),
         }
-        orchestrator = ToolOrchestrator(executors=executors)
+        orchestrator = ToolOrchestrator(executors=executors, mcp_client=mcp_client)
         return orchestrator
 
     async def execute(
@@ -45,6 +55,8 @@ class ToolOrchestrator:
         """Run one tool call and return its text result."""
         if agent is not None:
             executor = self._get_executor(ToolName.AGENT_AS_TOOL)
+        elif self._is_mcp_tool_name(tool_call.name):
+            executor = self._get_executor(ToolName.MCP)
         else:
             tool_name = ToolName(tool_call.name)
             executor = self._get_executor(tool_name)
@@ -95,10 +107,20 @@ class ToolOrchestrator:
         result_list = list(results)
         return result_list
 
-    def prepare(self, tools: list[ToolDefinition | Agent]) -> list[ToolEntry]:
-        """Register tool definitions and sub-agents for an agent run."""
+    async def prepare(self, tools: list[ToolDefinition | Agent | McpServer]) -> list[ToolEntry]:
+        """Register tool definitions, MCP servers, and sub-agents for an agent run."""
+        agent_servers = [tool for tool in tools if isinstance(tool, McpServer)]
+        other_tools = [tool for tool in tools if not isinstance(tool, McpServer)]
+        mcp_servers = self._mcp_client.servers_for_tools(agent_servers)
+
         entries: list[ToolEntry] = []
-        for tool in tools:
+        for server in mcp_servers:
+            definitions = await self._mcp_client.connect_server(server)
+            for definition in definitions:
+                entry = ToolEntry(definition=definition)
+                entries.append(entry)
+
+        for tool in other_tools:
             if isinstance(tool, Agent):
                 definition = self._agent_to_tool_definition(tool)
                 entry = ToolEntry(agent=tool, definition=definition)
@@ -136,3 +158,10 @@ class ToolOrchestrator:
         if executor is None:
             raise ValueError(f"Unknown tool: {tool_name.value}")
         return executor
+
+    @staticmethod
+    def _is_mcp_tool_name(name: str) -> bool:
+        """Return whether a provider-facing name belongs to an MCP tool."""
+        prefix = f"{ToolName.MCP.value}_"
+        is_mcp = name.startswith(prefix)
+        return is_mcp

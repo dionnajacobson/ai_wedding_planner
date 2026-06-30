@@ -66,11 +66,15 @@ class OpenAIAdapter(LLMAdapter):
 
     def _format_tool(self, tool: ToolDefinition) -> dict[str, Any]:
         """Convert one tool definition into a Responses API function tool."""
+        if tool.params_schema is not None:
+            parameters = tool.params_schema
+        else:
+            parameters = to_strict_json_schema(tool.params_model)
         tool_payload = {
             "type": "function",
             "name": tool.name_formatted,
             "description": tool.description,
-            "parameters": to_strict_json_schema(tool.params_model),
+            "parameters": parameters,
             "strict": True,
         }
         return tool_payload
