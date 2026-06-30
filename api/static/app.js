@@ -1,8 +1,19 @@
 const SESSION_KEY = "wedding_planner_session_id";
 const USER_KEY = "wedding_planner_user";
 
+const VENDOR_PIPELINE = [
+  { category: "venue", label: "Venue" },
+  { category: "catering", label: "Caterer" },
+  { category: "flowers", label: "Florist" },
+  { category: "photography", label: "Photographer" },
+  { category: "music", label: "DJ" },
+];
+
+const VENUE_CARD_THEMES = ["sage", "sky", "rose"];
+
 const onboardingPanelEl = document.getElementById("onboarding-panel");
 const chatPanelEl = document.getElementById("chat-panel");
+const appEl = document.querySelector(".app");
 const onboardingFormEl = document.getElementById("onboarding-form");
 const onboardingErrorEl = document.getElementById("onboarding-error");
 const startButtonEl = document.getElementById("start-button");
@@ -17,14 +28,13 @@ const statusTextEl = document.getElementById("status-text");
 const formEl = document.getElementById("chat-form");
 const inputEl = document.getElementById("message-input");
 const sendButtonEl = document.getElementById("send-button");
-
+const weddingDashboardEl = document.getElementById("wedding-dashboard");
 const weddingJsonEl = document.getElementById("wedding-json");
-const weddingSummaryEl = document.getElementById("wedding-summary");
 
 /** Format a number as USD currency. */
 function formatCurrency(value) {
   if (value === null || value === undefined) {
-    return "—";
+    return null;
   }
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -36,109 +46,366 @@ function formatCurrency(value) {
 /** Format an ISO date string for display. */
 function formatDate(value) {
   if (!value) {
-    return "—";
+    return null;
   }
   const parsed = new Date(`${value}T00:00:00`);
   return parsed.toLocaleDateString("en-US", {
+    weekday: "short",
     month: "short",
     day: "numeric",
     year: "numeric",
   });
 }
 
+/** Format an ISO date as a short month label. */
+function formatMonth(value) {
+  if (!value) {
+    return null;
+  }
+  const parsed = new Date(`${value}T00:00:00`);
+  return parsed.toLocaleDateString("en-US", { month: "long" });
+}
+
 /** Format an enum-like string for display. */
 function formatLabel(value) {
   if (!value) {
-    return "—";
+    return "";
   }
   return value.replaceAll("_", " ");
 }
 
-/** Build a labeled field row for the wedding sidebar. */
-function createField(label, value) {
-  const row = document.createElement("div");
-  row.className = "wedding-field";
-
-  const labelEl = document.createElement("span");
-  labelEl.textContent = label;
-
-  const valueEl = document.createElement("span");
-  valueEl.textContent = value;
-
-  row.append(labelEl, valueEl);
-  return row;
+/** Capitalize the first character of a string. */
+function capitalize(value) {
+  if (!value) {
+    return "";
+  }
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-/** Build a titled section in the wedding sidebar. */
-function createSection(title) {
-  const section = document.createElement("section");
-  section.className = "wedding-section";
+/** Build a display title from wedding profile fields. */
+function buildWeddingTitle(wedding) {
+  if (wedding.style.length === 0 && !wedding.location) {
+    return "Your wedding";
+  }
+  const style = wedding.style.length > 0 ? wedding.style.join(" ") : "wedding";
+  const location = wedding.location ? ` near ${wedding.location.split(",")[0]}` : "";
+  const article = /^[aeiou]/i.test(style) ? "An" : "A";
+  const title = `${article} ${style}${location} wedding`;
+  return capitalize(title);
+}
 
-  const heading = document.createElement("h3");
-  heading.textContent = title;
-  section.appendChild(heading);
+/** Build the compact summary line shown under the title. */
+function buildSummaryLine(wedding) {
+  const parts = [];
+  if (wedding.style.length > 0) {
+    parts.push(`${capitalize(wedding.style.join(" "))} wedding`);
+  }
+  if (wedding.location) {
+    parts.push(wedding.location);
+  }
+  if (wedding.wedding_date) {
+    parts.push(formatMonth(wedding.wedding_date));
+  }
+  if (wedding.guest_count) {
+    parts.push(`${wedding.guest_count} guests`);
+  }
+  if (wedding.budget_cap) {
+    parts.push(`~${formatCurrency(wedding.budget_cap)}`);
+  }
+  return parts.join(" · ");
+}
+
+/** Map vendor status values to dashboard badge styles. */
+function vendorStatusMeta(status) {
+  const mapping = {
+    booked: { className: "status-booked", label: "booked" },
+    contacted: { className: "status-negotiating", label: "negotiating" },
+    declined: { className: "status-muted", label: "declined" },
+    researching: { className: "status-contact", label: "to contact" },
+  };
+  return mapping[status] || mapping.researching;
+}
+
+/** Return vendors filtered by category. */
+function vendorsByCategory(wedding, category) {
+  return wedding.vendors.filter((vendor) => vendor.category === category);
+}
+
+/** Pick the highlighted venue from saved vendors. */
+function pickFeaturedVenue(venues) {
+  if (venues.length === 0) {
+    return null;
+  }
+  const booked = venues.find((venue) => venue.status === "booked");
+  if (booked) {
+    return booked;
+  }
+  const contacted = venues.find((venue) => venue.status === "contacted");
+  if (contacted) {
+    return contacted;
+  }
+  return venues[0];
+}
+
+/** Count vendors that are not booked or declined. */
+function countActiveVendors(wedding) {
+  const active = wedding.vendors.filter(
+    (vendor) => vendor.status !== "booked" && vendor.status !== "declined"
+  );
+  return active.length;
+}
+
+/** Create a DOM element with optional class and text. */
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) {
+    node.className = className;
+  }
+  if (text !== undefined) {
+    node.textContent = text;
+  }
+  return node;
+}
+
+/** Render venue cards for the dashboard. */
+function renderVenueCards(wedding) {
+  const section = el("section", "dash-section");
+  section.appendChild(el("h3", "dash-section-title", "Venues, price-shopped"));
+
+  const venues = vendorsByCategory(wedding, "venue");
+  if (venues.length === 0) {
+    const empty = el("p", "dash-empty", "Venue options will appear here as you shortlist locations.");
+    section.appendChild(empty);
+    return section;
+  }
+
+  const featured = pickFeaturedVenue(venues);
+  const grid = el("div", "venue-grid");
+  venues.forEach((venue, index) => {
+    const card = el("article", "venue-card");
+    if (venue.id === featured.id) {
+      card.classList.add("venue-card--featured");
+      card.appendChild(el("span", "venue-badge", "Best fit"));
+    }
+
+    const theme = VENUE_CARD_THEMES[index % VENUE_CARD_THEMES.length];
+    const icon = el("div", `venue-icon venue-icon--${theme}`);
+    icon.textContent = "✦";
+    card.appendChild(icon);
+
+    const header = el("div", "venue-card-header");
+    header.append(el("strong", "venue-name", venue.name));
+    header.append(el("span", "venue-status", formatLabel(venue.status)));
+    card.appendChild(header);
+
+    const price = formatCurrency(venue.estimated_cost) || "Quote pending";
+    card.appendChild(el("p", "venue-price", price));
+
+    const tags = el("div", "tag-row");
+    tags.appendChild(el("span", "tag", formatLabel(venue.category)));
+    if (wedding.guest_count) {
+      tags.appendChild(el("span", "tag", `${wedding.guest_count} cap`));
+    }
+    if (venue.notes) {
+      tags.appendChild(el("span", "tag", venue.notes));
+    }
+    card.appendChild(tags);
+    grid.appendChild(card);
+  });
+
+  section.appendChild(grid);
   return section;
 }
 
-/** Render the wedding profile sidebar from API data. */
-function renderWeddingProfile(wedding) {
-  weddingSummaryEl.innerHTML = "";
-  weddingJsonEl.textContent = JSON.stringify(wedding, null, 2);
+/** Render a horizontal quote comparison for venue pricing. */
+function renderQuoteComparison(wedding) {
+  const section = el("section", "dash-section");
+  section.appendChild(el("h3", "dash-section-title", "Quotes, compared"));
 
-  const basics = createSection("Basics");
-  basics.append(
-    createField("Date", formatDate(wedding.wedding_date)),
-    createField("Location", wedding.location || "—"),
-    createField("Guests", wedding.guest_count ?? "—"),
-    createField("Style", wedding.style.length > 0 ? wedding.style.join(", ") : "—")
-  );
+  const venues = vendorsByCategory(wedding, "venue");
+  if (venues.length === 0) {
+    const empty = el("p", "dash-empty", "Price comparisons appear once venue quotes are saved.");
+    section.appendChild(empty);
+    return section;
+  }
 
-  const budget = createSection("Budget");
-  budget.append(
-    createField("Budget cap", formatCurrency(wedding.budget_cap)),
-    createField("Allocated", formatCurrency(wedding.budget.allocated)),
-    createField("Remaining", formatCurrency(wedding.budget.remaining))
+  const featured = pickFeaturedVenue(venues);
+  const row = el("div", "quote-row");
+  venues.forEach((venue) => {
+    const chip = el("div", "quote-chip");
+    const shortName = venue.name.split(" ")[0];
+    const amount = formatCurrency(venue.estimated_cost) || "TBD";
+    chip.textContent = `${shortName} ${amount}`;
+    if (venue.id === featured.id) {
+      chip.classList.add("quote-chip--featured");
+    }
+    row.appendChild(chip);
+  });
+
+  section.appendChild(row);
+  section.appendChild(
+    el(
+      "p",
+      "dash-footnote",
+      "Ranked by fit from your saved vendors. Illustrative quotes."
+    )
   );
+  return section;
+}
+
+/** Render budget summary with progress bar. */
+function renderBudgetSection(wedding) {
+  const section = el("section", "dash-section");
+  section.appendChild(el("h3", "dash-section-title", "Budget"));
+
+  const stats = el("div", "budget-stats");
+  stats.append(
+    createStat("Cap", formatCurrency(wedding.budget_cap) || "—"),
+    createStat("Allocated", formatCurrency(wedding.budget.allocated) || "$0"),
+    createStat("Remaining", formatCurrency(wedding.budget.remaining) || "—")
+  );
+  section.appendChild(stats);
+
+  if (wedding.budget_cap) {
+    const progress = el("div", "budget-progress");
+    const fill = el("div", "budget-progress-fill");
+    const ratio = Math.min(wedding.budget.allocated / wedding.budget_cap, 1);
+    fill.style.width = `${Math.round(ratio * 100)}%`;
+    progress.appendChild(fill);
+    section.appendChild(progress);
+  }
 
   if (wedding.budget.items.length > 0) {
-    const list = document.createElement("ul");
-    list.className = "wedding-list";
+    const list = el("ul", "dash-list");
     wedding.budget.items.forEach((item) => {
-      const entry = document.createElement("li");
-      entry.textContent = `${formatLabel(item.category)} · ${item.name} · ${formatCurrency(item.estimated_amount)}`;
-      list.appendChild(entry);
+      const row = el("li", "dash-list-item");
+      row.append(
+        el("span", "dash-list-label", `${formatLabel(item.category)} · ${item.name}`),
+        el("span", "dash-list-value", formatCurrency(item.estimated_amount) || "—")
+      );
+      list.appendChild(row);
     });
-    budget.appendChild(list);
+    section.appendChild(list);
   }
 
-  const vendors = createSection("Vendors");
-  if (wedding.vendors.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "wedding-empty";
-    empty.textContent = "No vendors saved yet.";
-    vendors.appendChild(empty);
+  return section;
+}
+
+/** Render vendor pipeline with status badges. */
+function renderVendorPipeline(wedding) {
+  const section = el("section", "dash-section dash-section--compact");
+  const header = el("div", "dash-section-heading");
+  header.appendChild(el("h3", "dash-section-title", "Vendor pipeline"));
+  const inFlight = countActiveVendors(wedding);
+  header.appendChild(el("span", "dash-section-meta", `${inFlight} in flight`));
+  section.appendChild(header);
+
+  const list = el("ul", "pipeline-list");
+  VENDOR_PIPELINE.forEach(({ category, label }) => {
+    const matches = vendorsByCategory(wedding, category);
+    const vendor = matches[0];
+    const status = vendor ? vendorStatusMeta(vendor.status) : vendorStatusMeta("researching");
+
+    const row = el("li", "pipeline-item");
+    row.append(el("span", "pipeline-label", label));
+    const badge = el("span", `pipeline-badge ${status.className}`, status.label);
+    row.appendChild(badge);
+    list.appendChild(row);
+  });
+
+  section.appendChild(list);
+  return section;
+}
+
+/** Render notes when present. */
+function renderNotesSection(wedding) {
+  if (!wedding.notes) {
+    return null;
+  }
+  const section = el("section", "dash-section dash-section--compact");
+  section.appendChild(el("h3", "dash-section-title", "Notes"));
+  section.appendChild(el("p", "dash-notes", wedding.notes));
+  return section;
+}
+
+/** Build a small stat block for the budget row. */
+function createStat(label, value) {
+  const block = el("div", "budget-stat");
+  block.append(el("span", "budget-stat-label", label), el("strong", "budget-stat-value", value));
+  return block;
+}
+
+/** Render the full wedding dashboard from API data. */
+function renderWeddingProfile(wedding) {
+  weddingDashboardEl.innerHTML = "";
+  weddingJsonEl.textContent = JSON.stringify(wedding, null, 2);
+
+  const dashboard = el("div", "wedding-dashboard-inner");
+  dashboard.classList.add("wedding-dashboard-inner--refresh");
+
+  const metaBar = el("div", "dash-meta-bar");
+  metaBar.textContent = buildSummaryLine(wedding) || "Share details in chat to build your wedding profile.";
+  dashboard.appendChild(metaBar);
+
+  const hero = el("header", "dash-hero");
+  hero.appendChild(el("h2", "dash-title", buildWeddingTitle(wedding)));
+
+  const subtitleParts = [];
+  const formattedDate = formatDate(wedding.wedding_date);
+  if (formattedDate) {
+    subtitleParts.push(formattedDate);
+  }
+  if (wedding.vendors.length > 0) {
+    subtitleParts.push(`${wedding.vendors.length} vendors tracked`);
+  }
+  if (wedding.budget.items.length > 0) {
+    subtitleParts.push(`${wedding.budget.items.length} budget lines`);
+  }
+  if (wedding.style.length > 0) {
+    subtitleParts.push(wedding.style.join(", "));
+  }
+  hero.appendChild(el("p", "dash-subtitle", subtitleParts.join(" · ") || "Planning in progress"));
+
+  const tagRow = el("div", "dash-tag-row");
+  if (wedding.location) {
+    tagRow.appendChild(el("span", "dash-tag", wedding.location));
+  }
+  if (wedding.guest_count) {
+    tagRow.appendChild(el("span", "dash-tag", `${wedding.guest_count} guests`));
+  }
+  if (wedding.budget_cap) {
+    tagRow.appendChild(el("span", "dash-tag", formatCurrency(wedding.budget_cap)));
+  }
+  if (tagRow.childElementCount > 0) {
+    hero.appendChild(tagRow);
+  }
+  dashboard.appendChild(hero);
+
+  dashboard.appendChild(renderVenueCards(wedding));
+  dashboard.appendChild(renderQuoteComparison(wedding));
+  dashboard.appendChild(renderBudgetSection(wedding));
+
+  const bottomGrid = el("div", "dash-bottom-grid");
+  const pipeline = renderVendorPipeline(wedding);
+  bottomGrid.appendChild(pipeline);
+
+  const notes = renderNotesSection(wedding);
+  if (notes) {
+    bottomGrid.appendChild(notes);
   } else {
-    const list = document.createElement("ul");
-    list.className = "wedding-list";
-    wedding.vendors.forEach((vendor) => {
-      const entry = document.createElement("li");
-      entry.textContent = `${formatLabel(vendor.category)} · ${vendor.name} · ${formatLabel(vendor.status)}`;
-      list.appendChild(entry);
-    });
-    vendors.appendChild(list);
+    const placeholder = el("section", "dash-section dash-section--compact");
+    placeholder.appendChild(el("h3", "dash-section-title", "The day"));
+    placeholder.appendChild(
+      el("p", "dash-empty", "Your timeline will appear here once you start planning the schedule.")
+    );
+    bottomGrid.appendChild(placeholder);
   }
+  dashboard.appendChild(bottomGrid);
 
-  const sections = [basics, budget, vendors];
-  if (wedding.notes) {
-    const notes = createSection("Notes");
-    const copy = document.createElement("p");
-    copy.className = "wedding-empty";
-    copy.textContent = wedding.notes;
-    notes.appendChild(copy);
-    sections.push(notes);
-  }
-
-  weddingSummaryEl.append(...sections);
+  weddingDashboardEl.appendChild(dashboard);
+  requestAnimationFrame(() => {
+    dashboard.classList.remove("wedding-dashboard-inner--refresh");
+  });
 }
 
 /** Load the wedding profile for the active session. */
@@ -162,10 +429,11 @@ function setComposerEnabled(enabled) {
 
 /** Show the onboarding form and hide chat. */
 function showOnboarding(user = null) {
+  appEl.classList.remove("app--chat");
   onboardingPanelEl.hidden = false;
   chatPanelEl.hidden = true;
   messagesEl.innerHTML = "";
-  weddingSummaryEl.innerHTML = "";
+  weddingDashboardEl.innerHTML = "";
   weddingJsonEl.textContent = "";
   window.sessionId = null;
   setStatus("", false);
@@ -178,6 +446,7 @@ function showOnboarding(user = null) {
 
 /** Show chat and hide the onboarding form. */
 function showChat(user) {
+  appEl.classList.add("app--chat");
   onboardingPanelEl.hidden = true;
   chatPanelEl.hidden = false;
   welcomeTextEl.textContent = `Planning with ${user.first_name} ${user.last_name}`;

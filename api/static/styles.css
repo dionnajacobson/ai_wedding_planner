@@ -1,10 +1,14 @@
 :root {
   --bg: #f6f1ea;
-  --panel: rgba(255, 252, 247, 0.82);
+  --panel: rgba(255, 252, 247, 0.92);
   --ink: #2b2620;
   --muted: #6f655b;
   --accent: #6f7f63;
   --accent-dark: #55624c;
+  --dash-blue: #4a6fa5;
+  --dash-blue-soft: #edf3fa;
+  --dash-green: #5d8a62;
+  --dash-green-soft: #e8f2e9;
   --user-bubble: #e8ddd1;
   --assistant-bubble: #ffffff;
   --line: rgba(43, 38, 32, 0.08);
@@ -44,14 +48,23 @@ body {
 }
 
 .app {
-  width: min(1120px, calc(100% - 2rem));
+  width: min(760px, calc(100% - 2rem));
   margin: 0 auto;
   padding: 3rem 0 2rem;
+}
+
+.app.app--chat {
+  width: min(1380px, calc(100% - 1.5rem));
+  padding: 1rem 0 1.25rem;
 }
 
 .header {
   text-align: center;
   margin-bottom: 1.5rem;
+}
+
+.app.app--chat .header {
+  display: none;
 }
 
 .eyebrow {
@@ -79,7 +92,7 @@ body {
 }
 
 .onboarding-panel,
-.chat-panel {
+.workspace {
   border: 1px solid var(--line);
   border-radius: 28px;
   background: var(--panel);
@@ -175,126 +188,27 @@ body {
   cursor: not-allowed;
 }
 
-.chat-panel {
-  display: flex;
-  flex-direction: column;
-  min-height: 68vh;
-}
-
-.chat-layout {
+/* Side-by-side workspace */
+.workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.85fr);
-  min-height: 68vh;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: calc(100vh - 2.5rem);
 }
 
-.chat-main {
+.workspace-chat {
   display: flex;
   flex-direction: column;
   min-width: 0;
   border-right: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.42);
 }
 
-.wedding-panel {
+.workspace-wedding {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1.25rem;
-  background: rgba(255, 255, 255, 0.35);
-  overflow-y: auto;
-}
-
-.wedding-panel-header h2 {
-  margin: 0;
-  font-family: "Cormorant Garamond", serif;
-  font-size: 1.55rem;
-  font-weight: 600;
-}
-
-.wedding-panel-copy {
-  margin: 0.35rem 0 0;
-  color: var(--muted);
-  font-size: 0.86rem;
-  line-height: 1.5;
-}
-
-.wedding-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-.wedding-section {
-  padding: 0.85rem 0.95rem;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.wedding-section h3 {
-  margin: 0 0 0.55rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--accent-dark);
-}
-
-.wedding-field {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.25rem 0;
-  font-size: 0.88rem;
-  line-height: 1.45;
-}
-
-.wedding-field span:first-child {
-  color: var(--muted);
-}
-
-.wedding-field span:last-child {
-  text-align: right;
-}
-
-.wedding-list {
-  margin: 0;
-  padding-left: 1rem;
-  font-size: 0.86rem;
-  line-height: 1.5;
-}
-
-.wedding-list li {
-  margin-bottom: 0.35rem;
-}
-
-.wedding-empty {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.88rem;
-  line-height: 1.55;
-}
-
-.wedding-json-details {
-  margin-top: auto;
-  font-size: 0.82rem;
-  color: var(--muted);
-}
-
-.wedding-json-details summary {
-  cursor: pointer;
-  user-select: none;
-}
-
-.wedding-json {
-  margin: 0.65rem 0 0;
-  padding: 0.75rem;
-  border-radius: 12px;
-  background: rgba(43, 38, 32, 0.04);
-  color: var(--ink);
-  font-size: 0.72rem;
-  line-height: 1.45;
-  overflow-x: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
+  min-width: 0;
+  background: #faf8f4;
+  overflow: hidden;
 }
 
 .chat-toolbar {
@@ -302,15 +216,24 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.5rem 0.5rem;
+  padding: 1rem 1.35rem 0.85rem;
   border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.chat-eyebrow {
+  margin: 0 0 0.2rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
 
 .welcome-text {
   margin: 0;
-  font-size: 0.92rem;
-  color: var(--muted);
+  font-size: 0.95rem;
+  color: var(--ink);
+  font-weight: 500;
 }
 
 .text-button {
@@ -321,6 +244,7 @@ body {
   font-size: 0.88rem;
   cursor: pointer;
   padding: 0.25rem 0;
+  white-space: nowrap;
 }
 
 .text-button:hover {
@@ -332,7 +256,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 1.5rem;
+  padding: 1.35rem;
   overflow-y: auto;
 }
 
@@ -340,7 +264,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  max-width: 85%;
+  max-width: 88%;
   animation: rise 0.35s ease;
 }
 
@@ -383,7 +307,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 0 1.5rem 0.75rem;
+  padding: 0 1.35rem 0.75rem;
   color: var(--muted);
   font-size: 0.92rem;
 }
@@ -402,7 +326,7 @@ body {
   gap: 0.75rem;
   padding: 1rem 1rem 1.1rem;
   border-top: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .composer textarea {
@@ -425,6 +349,380 @@ body {
 
 .composer button {
   align-self: end;
+}
+
+/* Wedding dashboard panel */
+.wedding-dashboard {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.wedding-dashboard-inner {
+  padding: 1.1rem 1.15rem 1.5rem;
+  transition: opacity 0.25s ease;
+}
+
+.wedding-dashboard-inner--refresh {
+  opacity: 0.55;
+}
+
+.dash-meta-bar {
+  padding: 0.55rem 0.85rem;
+  border-radius: 12px;
+  background: var(--dash-blue-soft);
+  color: #355a86;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.dash-hero {
+  margin-top: 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.dash-title {
+  margin: 0;
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(1.65rem, 2.5vw, 2.15rem);
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.dash-subtitle {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.dash-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.65rem;
+}
+
+.dash-tag {
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--line);
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.dash-section {
+  margin-bottom: 1rem;
+  padding: 0.95rem;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.dash-section--compact {
+  padding: 0.85rem 0.95rem;
+}
+
+.dash-section-title {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dash-blue);
+  font-weight: 600;
+}
+
+.dash-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.dash-section-meta {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.dash-empty,
+.dash-footnote,
+.dash-notes {
+  margin: 0.55rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.dash-footnote {
+  margin-top: 0.65rem;
+  font-size: 0.74rem;
+}
+
+.venue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.venue-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.venue-card--featured {
+  border-color: #7ba4d4;
+  box-shadow: 0 0 0 1px rgba(74, 111, 165, 0.15);
+}
+
+.venue-badge {
+  position: absolute;
+  top: 0.55rem;
+  left: 0.55rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: var(--dash-blue);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.venue-icon {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 72px;
+  border-radius: 12px;
+  font-size: 1.35rem;
+}
+
+.venue-icon--sage {
+  background: linear-gradient(135deg, #dce8d8, #c5d4bf);
+}
+
+.venue-icon--sky {
+  background: linear-gradient(135deg, #d8e6f4, #b8cfe8);
+}
+
+.venue-icon--rose {
+  background: linear-gradient(135deg, #f0ddd8, #e5c4bc);
+}
+
+.venue-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.venue-name {
+  font-size: 0.88rem;
+  line-height: 1.3;
+}
+
+.venue-status {
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-transform: capitalize;
+}
+
+.venue-price {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.tag {
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: #f3f0ea;
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+.quote-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.quote-chip {
+  flex: 1 1 auto;
+  min-width: 110px;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  background: #f1ede7;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.quote-chip--featured {
+  background: var(--dash-green-soft);
+  color: var(--dash-green);
+  font-weight: 600;
+}
+
+.budget-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.budget-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.budget-stat-label {
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.budget-stat-value {
+  font-size: 0.92rem;
+}
+
+.budget-progress {
+  height: 8px;
+  margin-top: 0.85rem;
+  border-radius: 999px;
+  background: #ece7df;
+  overflow: hidden;
+}
+
+.budget-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--dash-green), #8cb890);
+  transition: width 0.35s ease;
+}
+
+.dash-list {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dash-list-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.35rem 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.82rem;
+}
+
+.dash-list-item:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.dash-list-label {
+  color: var(--muted);
+}
+
+.dash-list-value {
+  font-weight: 500;
+}
+
+.dash-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.pipeline-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pipeline-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.84rem;
+}
+
+.pipeline-item:first-child {
+  border-top: none;
+}
+
+.pipeline-label {
+  color: var(--ink);
+}
+
+.pipeline-badge {
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  text-transform: lowercase;
+}
+
+.status-booked {
+  background: var(--dash-green-soft);
+  color: var(--dash-green);
+}
+
+.status-negotiating {
+  background: #dceaf8;
+  color: #4a7aa8;
+}
+
+.status-contact,
+.status-muted {
+  background: #f0ece6;
+  color: var(--muted);
+}
+
+.wedding-json-details {
+  padding: 0.65rem 1rem 0.85rem;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.65);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.wedding-json-details summary {
+  cursor: pointer;
+  user-select: none;
+}
+
+.wedding-json {
+  margin: 0.65rem 0 0;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: rgba(43, 38, 32, 0.04);
+  color: var(--ink);
+  font-size: 0.72rem;
+  line-height: 1.45;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .sr-only {
@@ -462,25 +760,32 @@ body {
   }
 }
 
-@media (max-width: 900px) {
-  .chat-layout {
+@media (max-width: 980px) {
+  .workspace {
     grid-template-columns: 1fr;
+    min-height: auto;
   }
 
-  .chat-main {
+  .workspace-chat {
     border-right: none;
     border-bottom: 1px solid var(--line);
+    min-height: 55vh;
   }
 
-  .wedding-panel {
-    max-height: none;
+  .workspace-wedding {
+    min-height: 45vh;
+  }
+
+  .dash-bottom-grid {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 640px) {
-  .app {
+  .app,
+  .app.app--chat {
     width: min(100%, calc(100% - 1rem));
-    padding-top: 1.5rem;
+    padding-top: 0.75rem;
   }
 
   .onboarding-panel {
@@ -491,12 +796,16 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .chat-panel {
-    min-height: calc(100vh - 10rem);
+  .workspace,
+  .onboarding-panel {
     border-radius: 22px;
   }
 
   .message {
     max-width: 92%;
+  }
+
+  .budget-stats {
+    grid-template-columns: 1fr;
   }
 }
