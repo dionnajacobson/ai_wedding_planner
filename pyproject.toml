@@ -29,6 +29,10 @@ dev = [
 [tool.pytest.ini_options]
 pythonpath = ["."]
 # Omit testpaths — pytest discovers test_*.py files anywhere under the project root.
+markers = [
+    "api: tests that call external APIs (requires credentials and network)",
+    "non_api: unit and integration tests that do not call external APIs",
+]
 
 [tool.ruff]
 target-version = "py312"

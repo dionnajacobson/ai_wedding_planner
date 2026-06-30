@@ -122,6 +122,7 @@ class TestWebSearchTool:
             assert case["expected_fragment"] in result.content
 
 
+@pytest.mark.api
 @pytest.mark.skipif(not os.getenv("TAVILY_API_KEY"), reason="TAVILY_API_KEY not set")
 class TestWebSearchToolE2E:
     """End-to-end table-driven tests for WebSearchTool against the Tavily API."""

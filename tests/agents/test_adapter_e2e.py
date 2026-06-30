@@ -12,6 +12,7 @@ from tests.agents.mock_data import DaysUntilDateDefinition
 load_dotenv()
 
 
+@pytest.mark.api
 class TestAdapterE2E:
     """End-to-end table-driven tests for provider adapters."""
 

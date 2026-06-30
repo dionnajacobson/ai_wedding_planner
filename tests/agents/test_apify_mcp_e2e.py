@@ -39,6 +39,7 @@ def _apify_server() -> McpServer:
     return server
 
 
+@pytest.mark.api
 @pytest.mark.skipif(not os.getenv("APIFY_API_TOKEN"), reason="APIFY_API_TOKEN not set")
 class TestApifyMcpE2E:
     """Live integration tests against the hosted Apify MCP server."""
