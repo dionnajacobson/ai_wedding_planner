@@ -288,19 +288,73 @@ body {
   padding: 0.95rem 1.1rem;
   border-radius: 18px;
   line-height: 1.55;
-  white-space: pre-wrap;
   word-break: break-word;
 }
 
 .message.user .message-bubble {
   background: var(--user-bubble);
   border-bottom-right-radius: 6px;
+  white-space: pre-wrap;
 }
 
 .message.assistant .message-bubble {
   background: var(--assistant-bubble);
   border: 1px solid var(--line);
   border-bottom-left-radius: 6px;
+}
+
+.message-bubble p {
+  margin: 0 0 0.7em;
+}
+
+.message-bubble p:last-child {
+  margin-bottom: 0;
+}
+
+.message-bubble ul,
+.message-bubble ol {
+  margin: 0 0 0.7em;
+  padding-left: 1.25em;
+}
+
+.message-bubble li {
+  margin-bottom: 0.3em;
+}
+
+.message-bubble li:last-child {
+  margin-bottom: 0;
+}
+
+.message-bubble h4,
+.message-bubble h5,
+.message-bubble h6 {
+  margin: 0 0 0.4em;
+  font-size: 0.98rem;
+}
+
+.message-bubble strong {
+  font-weight: 600;
+}
+
+.message-bubble code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+  background: var(--code-bg, rgba(0, 0, 0, 0.06));
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+.message-bubble a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.message-bubble img {
+  max-width: 100%;
+  border-radius: 10px;
+  margin: 0.3em 0;
+  display: block;
 }
 
 .status {

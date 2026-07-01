@@ -475,6 +475,109 @@ function loadUser() {
   }
 }
 
+/** Escape HTML special characters so markdown source can't inject markup. */
+function escapeHtml(text) {
+  return text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+/** Apply inline markdown formatting (bold, italic, code, links) to escaped text. */
+function renderInlineMarkdown(text) {
+  let html = escapeHtml(text);
+  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+  html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, "<em>$1</em>");
+  html = html.replace(
+    /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g,
+    '<img src="$2" alt="$1" loading="lazy">'
+  );
+  html = html.replace(
+    /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+  );
+  return html;
+}
+
+/** Convert a small subset of markdown (headers, lists, emphasis, links, paragraphs) to safe HTML. */
+function renderMarkdown(source) {
+  const lines = source.replace(/\r\n/g, "\n").split("\n");
+  const htmlParts = [];
+  let listTag = null;
+  let listItems = [];
+  let paragraphLines = [];
+
+  function flushParagraph() {
+    if (paragraphLines.length === 0) {
+      return;
+    }
+    htmlParts.push(`<p>${paragraphLines.map(renderInlineMarkdown).join("<br>")}</p>`);
+    paragraphLines = [];
+  }
+
+  function flushList() {
+    if (listItems.length === 0) {
+      return;
+    }
+    const items = listItems.map((item) => `<li>${renderInlineMarkdown(item)}</li>`).join("");
+    htmlParts.push(`<${listTag}>${items}</${listTag}>`);
+    listItems = [];
+    listTag = null;
+  }
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+
+    if (line === "") {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+
+    const headerMatch = line.match(/^(#{1,3})\s+(.*)$/);
+    if (headerMatch) {
+      flushParagraph();
+      flushList();
+      const level = headerMatch[1].length + 3;
+      htmlParts.push(`<h${level}>${renderInlineMarkdown(headerMatch[2])}</h${level}>`);
+      continue;
+    }
+
+    const bulletMatch = line.match(/^[-*]\s+(.*)$/);
+    if (bulletMatch) {
+      flushParagraph();
+      if (listTag && listTag !== "ul") {
+        flushList();
+      }
+      listTag = "ul";
+      listItems.push(bulletMatch[1]);
+      continue;
+    }
+
+    const numberedMatch = line.match(/^\d+\.\s+(.*)$/);
+    if (numberedMatch) {
+      flushParagraph();
+      if (listTag && listTag !== "ol") {
+        flushList();
+      }
+      listTag = "ol";
+      listItems.push(numberedMatch[1]);
+      continue;
+    }
+
+    flushList();
+    paragraphLines.push(line);
+  }
+
+  flushParagraph();
+  flushList();
+
+  return htmlParts.join("");
+}
+
 /** Append a user or assistant message bubble to the chat log. */
 function appendMessage(role, content) {
   const wrapper = document.createElement("div");
@@ -486,7 +589,11 @@ function appendMessage(role, content) {
 
   const bubble = document.createElement("div");
   bubble.className = "message-bubble";
-  bubble.textContent = content;
+  if (role === "user") {
+    bubble.textContent = content;
+  } else {
+    bubble.innerHTML = renderMarkdown(content);
+  }
 
   wrapper.append(label, bubble);
   messagesEl.appendChild(wrapper);

@@ -166,13 +166,19 @@ class WeddingVendor(Base):
         SAEnum(VendorCategory, native_enum=False),
         nullable=False,
     )
-    contact_info: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     estimated_cost: Mapped[float | None] = mapped_column(Float, nullable=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    photos: Mapped[list[str]] = mapped_column(
+        ARRAY(String(1000)),
+        nullable=False,
+        server_default="{}",
+    )
     status: Mapped[VendorStatus] = mapped_column(
         SAEnum(VendorStatus, native_enum=False),
         nullable=False,
@@ -184,6 +190,7 @@ class WeddingVendor(Base):
         onupdate=func.now(),
         nullable=False,
     )
+    website: Mapped[str | None] = mapped_column(String(500), nullable=True)
     wedding_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("weddings.id"), nullable=False
     )

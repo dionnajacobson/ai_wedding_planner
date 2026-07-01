@@ -46,11 +46,14 @@ class WeddingStore:
         """Insert a vendor row from a candidate with status 'to_contact'."""
         record = db.WeddingVendor(
             category=candidate.category,
-            contact_info=candidate.contact_info,
+            email=candidate.email,
             estimated_cost=candidate.estimated_cost,
             name=candidate.name,
             notes=candidate.notes,
+            phone=candidate.phone,
+            photos=candidate.photos,
             status=db.VendorStatus.TO_CONTACT,
+            website=candidate.website,
             wedding_id=wedding_id,
         )
         self._db.add(record)
@@ -119,12 +122,15 @@ class WeddingStore:
         """Map a vendor row to a Pydantic model."""
         vendor = WeddingVendor(
             category=record.category,
-            contact_info=record.contact_info,
+            email=record.email,
             estimated_cost=record.estimated_cost,
             id=record.id,
             name=record.name,
             notes=record.notes,
+            phone=record.phone,
+            photos=list(record.photos or []),
             status=record.status,
+            website=record.website,
         )
         return vendor
 

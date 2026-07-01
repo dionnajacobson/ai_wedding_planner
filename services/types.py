@@ -41,10 +41,13 @@ class VenueCandidate(BaseModel):
     """A vendor candidate to save — bring-your-own or found via vendor search."""
 
     category: VendorCategory
-    contact_info: str | None = None
+    email: str | None = None
     estimated_cost: float | None = None
     name: str
     notes: str | None = None
+    phone: str | None = None
+    photos: list[str] = Field(default_factory=list)
+    website: str | None = None
 
 
 class WeddingBudget(BaseModel):
@@ -74,12 +77,15 @@ class WeddingVendor(BaseModel):
     """A vendor the couple is researching or has booked."""
 
     category: VendorCategory
-    contact_info: str | None = None
+    email: str | None = None
     estimated_cost: float | None = None
     id: uuid.UUID
     name: str
     notes: str | None = None
+    phone: str | None = None
+    photos: list[str] = Field(default_factory=list)
     status: VendorStatus
+    website: str | None = None
 
 
 class Wedding(BaseModel):
