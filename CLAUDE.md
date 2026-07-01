@@ -44,6 +44,7 @@ This is a multi-agent wedding planning assistant built on a custom agent framewo
 - **`agents/agent/agent.py`** — `AgentRunner` drives the tool loop. Each round re-renders the prompt with accumulated `ToolResult`s appended, then calls the LLM.
 - **`agents/client/`** — `LLMClient` routes `LLMRequest` to provider adapters via `Provider` extracted from the model enum value (e.g. `"openai/gpt-4o-mini-2024-07-18"` → `OpenAIAdapter`). Both OpenAI and Anthropic adapters are registered by default.
 - **`agents/tools/orchestrator.py`** — `ToolOrchestrator.prepare()` converts an `Agent`'s `tools=` list into `ToolEntry` objects. It handles three kinds of list members differently: `ToolDefinition` instances pass through as-is; `Agent` instances are wrapped into `AgentToolDefinition` entries (see below); `McpServer` instances are connected live and expanded into one `McpToolDefinition` per remote tool (see MCP tools below). On execution, sub-agent tool calls are routed to `AgentToolExecutor`, and MCP-prefixed tool calls are routed to `McpToolExecutor`.
+- **`agents/tools/tools/`** — concrete tool implementations (`agent_tool.py`, `days_until_date.py`, `web_search.py`, each a `ToolDefinition` + `ToolExecutor` pair) and MCP server definitions (`servers.py`, e.g. `ApifyMcpServer`).
 - **`agents/prompts/`** — Jinja2 templates in `templates/`. Each template has `{% block system %}` and `{% block user %}` blocks. `JinjaPrompt.update_context()` accepts runtime values (tool results, tool descriptions) that are formatted and merged at render time via `runtime_fields`. Static context is set at construction; runtime context is cleared per turn by `AgentToolExecutor`.
 
 ### Sub-agent as tool pattern
@@ -52,7 +53,7 @@ Passing an `Agent` instance in the `tools=` list of another `Agent` causes `Tool
 
 ### MCP tools
 
-An `Agent`'s `tools=` list can also contain an `McpServer` (`agents/tools/mcp/config.py`; transports: `stdio`, `sse`, `streamable_http`), e.g. `ApifyMcpServer` in `agents/tools/mcp/apify.py`, which `agents/wedding_agent.py` passes to its vendor-search sub-agent. Unlike a normal `ToolDefinition`, an MCP server's tools aren't declared in code — `McpClientManager.connect_server()` (`agents/tools/mcp/client_manager.py`) opens a live session, calls `list_tools()`, and produces one `McpToolDefinition` per remote tool at prepare-time, with a provider-safe name (`mcp_{server_slug}_{tool_slug}`). All calls to any MCP tool route through the single shared `McpToolExecutor` → `McpClientManager.call_tool()`, which looks up the live session by formatted tool name. `McpClientManager` owns the connection lifecycle (`AsyncExitStack`) and is intentionally stateful — inject and reuse one instance rather than constructing it per call. The root `mcp.config.json` is gitignored/local and is not read by the app; MCP servers are wired up as Python `McpServer` values instead.
+An `Agent`'s `tools=` list can also contain an `McpServer` (`agents/tools/mcp/config.py`; transports: `stdio`, `sse`, `streamable_http`), e.g. `ApifyMcpServer` in `agents/tools/tools/servers.py`, which `agents/wedding_agent.py` passes to its vendor-search sub-agent. Unlike a normal `ToolDefinition`, an MCP server's tools aren't declared in code — `McpClientManager.connect_server()` (`agents/tools/mcp/client_manager.py`) opens a live session, calls `list_tools()`, and produces one `McpToolDefinition` per remote tool at prepare-time, with a provider-facing name (`mcp_{server_slug}_{tool_slug}`) exposed via its `provider_name` property. All calls to any MCP tool route through the single shared `McpToolExecutor` → `McpClientManager.call_tool()`, which looks up the live session by that name. `McpClientManager` owns the connection lifecycle (`AsyncExitStack`) and is intentionally stateful — inject and reuse one instance rather than constructing it per call. The root `mcp.config.json` is gitignored/local and is not read by the app; MCP servers are wired up as Python `McpServer` values instead.
 
 ### Tool results and prompt context
 
@@ -93,9 +94,9 @@ From `.cursor/rules.mdc`:
 
 ## Extending the system
 
-**New tool:** Add `ToolName` in `agents/tools/types.py` → subclass `ToolDefinition` (schema) + implement `ToolExecutor` (logic) → register the executor in `ToolOrchestrator.default()` → add the `ToolDefinition` instance to the agent's `tools=` list.
+**New tool:** Add `ToolName` in `agents/tools/types.py` → subclass `ToolDefinition` (schema) + implement `ToolExecutor` (logic) in `agents/tools/tools/` → register the executor in `ToolOrchestrator.default()` → add the `ToolDefinition` instance to the agent's `tools=` list.
 
-**New MCP-backed tool:** No code needed per tool — define an `McpServer` (`agents/tools/mcp/config.py`) with its transport config and add it directly to an agent's `tools=` list; its tools are discovered at prepare-time.
+**New MCP-backed tool:** No code needed per tool — define an `McpServer` in `agents/tools/tools/servers.py` with its transport config and add it directly to an agent's `tools=` list; its tools are discovered at prepare-time.
 
 **New prompt:** Add a Jinja template in `agents/prompts/templates/` → subclass `AgentJinjaPrompt` in `agents/prompts/prompts.py` → add snapshot test in `tests/agents/test_prompts.py`.
 

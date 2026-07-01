@@ -9,10 +9,10 @@ from unittest.mock import Mock, patch
 from agents.agent import Agent, AgentRunResult
 from agents.client.types import Model
 from agents.prompts.base import JinjaPrompt
-from agents.tools.tools.agent_tool import AgentToolExecutor
 from agents.tools.mcp import McpToolExecutor
 from agents.tools.orchestrator import ToolOrchestrator
 from agents.tools.protocols import ToolExecutor
+from agents.tools.tools.agent_tool import AgentToolExecutor
 from agents.tools.types import ToolCall, ToolName, format_agent_name
 
 
