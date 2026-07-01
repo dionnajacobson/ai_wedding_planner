@@ -4,7 +4,7 @@ import uuid
 from agents.agent import Agent, AgentRunner
 from agents.client.types import Model
 from agents.prompts.prompts import VendorSearchPromptJinja, WeddingPromptJinja
-from agents.tools.web_search import WebSearchDefinition
+from agents.tools.mcp.apify import ApifyMcpServer
 from observability.logging import log_context
 from services.message_service import MessageService
 from services.types import Message, MessageRole
@@ -27,16 +27,6 @@ class WeddingAgent:
         self._runner = runner
         self._wedding_service = wedding_service
 
-    @staticmethod
-    def default() -> "WeddingAgent":
-        """Get the default wedding agent."""
-        wedding_agent = WeddingAgent(
-            message_service=MessageService.default(),
-            runner=AgentRunner.default(),
-            wedding_service=WeddingService.default(),
-        )
-        return wedding_agent
-
     async def chat(
         self,
         query: str,
@@ -52,8 +42,7 @@ class WeddingAgent:
                 name="vendor_search",
                 agent_description="Helps find vendors for the wedding.",
                 model=Model.GPT_4O_MINI_2024_07_18,
-                mcp_servers=["apify"],
-                tools=[WebSearchDefinition()],
+                tools=[ApifyMcpServer],
                 prompt=VendorSearchPromptJinja(query=query, history=history),
             )
             agent = Agent(

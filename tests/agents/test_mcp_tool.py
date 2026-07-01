@@ -11,10 +11,11 @@ import mcp.types as mcp_types
 from agents.agent import Agent
 from agents.client.types import Model
 from agents.prompts.prompts import VendorSearchPromptJinja
-from agents.tools.mcp import McpClientManager, McpServer, McpToolDefinition, McpToolExecutor
+from agents.tools.mcp import McpClientManager, McpToolDefinition, McpToolExecutor
+from agents.tools.mcp.config import ServerConfig, StdioConfig
 from agents.tools.mcp.client_manager import McpClientManager as ClientManagerClass
 from agents.tools.orchestrator import ToolOrchestrator
-from agents.tools.types import ToolCall, ToolName, format_mcp_tool_name
+from agents.tools.types import ToolCall, ToolName
 
 
 class TestMcpToolNaming:
@@ -32,7 +33,7 @@ class TestMcpToolNaming:
         ]
 
         for case in test_cases:
-            formatted = format_mcp_tool_name(case["server_name"], case["tool_name"])
+            formatted = McpToolDefinition.format_name(case["server_name"], case["tool_name"])
             assert formatted == case["expected"]
 
 
@@ -78,10 +79,13 @@ class TestMcpOrchestratorIntegration:
         test_cases: list[dict[str, Any]] = [
             {
                 "name": "expands_mcp_server_into_tool_entries",
-                "server": McpServer(
-                    args=["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
-                    command="npx",
+                "server": ServerConfig(
+                    config=StdioConfig(
+                        args=["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
+                        command="npx",
+                    ),
                     name="filesystem",
+                    type="stdio",
                 ),
                 "expected_tool_name": "mcp_filesystem_read_file",
             },
@@ -97,16 +101,16 @@ class TestMcpOrchestratorIntegration:
             )
             client = AsyncMock(spec=McpClientManager)
             client.connect_server.return_value = [definition]
-            client.servers_for_agent.return_value = (case["server"],)
+            client.resolve_servers.return_value = (case["server"],)
             orchestrator = ToolOrchestrator(
                 executors={ToolName.MCP: McpToolExecutor(client=client)},
                 mcp_client=client,
             )
             agent = Agent(
-                mcp_servers=["filesystem"],
                 model=Model.GPT_4O_MINI_2024_07_18,
                 name="vendor_search",
                 prompt=VendorSearchPromptJinja(query="Find florists", history=[]),
+                tools=[case["server"]],
             )
 
             # ACT

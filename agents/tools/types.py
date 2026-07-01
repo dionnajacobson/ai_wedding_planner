@@ -48,14 +48,6 @@ class ToolDefinition(BaseModel):
         return self
 
 
-def format_mcp_tool_name(server_name: str, tool_name: str) -> str:
-    """Build a provider-safe tool name for an MCP tool."""
-    server_slug = format_agent_name(server_name)
-    tool_slug = format_agent_name(tool_name)
-    formatted = f"{ToolName.MCP.value}_{server_slug}_{tool_slug}"
-    return formatted
-
-
 class ToolCall(BaseModel):
     """A tool invocation requested by an LLM."""
 

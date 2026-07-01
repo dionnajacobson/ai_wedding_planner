@@ -11,7 +11,7 @@ from agents.client.types import Model
 from agents.prompts.base import JinjaPrompt
 from agents.tools.agent_tool import AgentToolDefinition
 from agents.tools.mcp.client_manager import McpClientManager
-from agents.tools.mcp.config import McpServer
+from agents.tools.mcp.config import ServerConfig, StdioConfig
 from agents.tools.mcp.definitions import McpToolDefinition
 from agents.tools.mcp.tool import McpToolExecutor
 from agents.tools.orchestrator import ToolOrchestrator
@@ -96,29 +96,29 @@ class TestToolOrchestrator:
 
     def test_prepare_includes_configured_mcp_servers(self) -> None:
         """Configured MCP servers are merged during prepare without agent wiring."""
-        server = McpServer(
-            command="npx",
+        server = ServerConfig(
+            config=StdioConfig(command="npx"),
             name="filesystem",
+            type="stdio",
         )
         definition = McpToolDefinition(
             description="Read a file",
             mcp_server_name="filesystem",
             mcp_tool_name="read_file",
-            params_schema={"type": "object", "properties": {"path": {"type": "string"}}},
+                params_schema={"type": "object", "properties": {"path": {"type": "string"}}},
         )
         client = AsyncMock(spec=McpClientManager)
         client.connect_server.return_value = [definition]
-        client.servers_for_agent.return_value = (server,)
+        client.resolve_servers.return_value = (server,)
         orchestrator = ToolOrchestrator(
             executors={ToolName.MCP: McpToolExecutor(client=client)},
             mcp_client=client,
         )
         agent = Agent(
-            mcp_servers=["filesystem"],
             model=Model.GPT_4O_MINI_2024_07_18,
             name="test",
             prompt=_TaskPrompt(),
-            tools=[DaysUntilDateDefinition()],
+            tools=[server, DaysUntilDateDefinition()],
         )
 
         entries = asyncio.run(orchestrator.prepare(agent))

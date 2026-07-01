@@ -13,6 +13,7 @@ from openai.types.responses import Response
 from agents.client.errors import map_openai_error
 from agents.client.openai.types import OpenAIPayload
 from agents.client.protocols import LLMAdapter
+from agents.client.schema import OpenAIFunctionSchema
 from agents.client.types import LLMRequest, LLMResponse
 from agents.tools.types import ToolCall, ToolDefinition
 
@@ -67,15 +68,17 @@ class OpenAIAdapter(LLMAdapter):
     def _format_tool(self, tool: ToolDefinition) -> dict[str, Any]:
         """Convert one tool definition into a Responses API function tool."""
         if tool.params_schema is not None:
-            parameters = tool.params_schema
+            parameters = OpenAIFunctionSchema(tool.params_schema).normalize()
+            strict = False
         else:
             parameters = to_strict_json_schema(tool.params_model)
+            strict = True
         tool_payload = {
             "type": "function",
             "name": tool.name_formatted,
             "description": tool.description,
             "parameters": parameters,
-            "strict": True,
+            "strict": strict,
         }
         return tool_payload
 

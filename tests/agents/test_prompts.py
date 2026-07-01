@@ -1,8 +1,8 @@
 from typing import Any
 
 from agents.prompts.prompts import BaseJinjaPrompt, VendorSearchPromptJinja, WeddingPromptJinja
+from agents.tools.mcp.definitions import McpToolDefinition
 from agents.tools.types import ToolResult
-from agents.tools.web_search import WebSearchDefinition
 from services.types import MessageRole
 from tests.base import PromptDataAssertionTest
 from tests.services.mock_data import mock_message
@@ -135,7 +135,12 @@ class TestVendorSearchPromptJinja(PromptDataAssertionTest):
                 "prompt": VendorSearchPromptJinja(
                     query="What Austin florists fit our budget?",
                     history=mock_history,
-                    tool_descriptions=[WebSearchDefinition()],
+                    tool_descriptions=[McpToolDefinition(
+                        description="Scrape wedding vendors",
+                        mcp_server_name="apify",
+                        mcp_tool_name="fortuitous_pirate--wedding-vendor-scraper",
+                        params_schema={"type": "object"},
+                    )],
                     tool_results=[
                         ToolResult(
                             tool_call_id="call_1",

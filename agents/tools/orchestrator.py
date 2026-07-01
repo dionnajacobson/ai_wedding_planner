@@ -11,6 +11,7 @@ from agents.agent.types import Agent, ToolEntry
 from agents.tools.agent_tool import AgentToolDefinition, AgentToolExecutor, AgentToolInput
 from agents.tools.days_until_date import DaysUntilDateExecutor
 from agents.tools.mcp.client_manager import McpClientManager
+from agents.tools.mcp.config import McpServer, ServerConfig
 from agents.tools.mcp.tool import McpToolExecutor
 from agents.tools.protocols import ToolExecutor
 from agents.tools.types import ToolCall, ToolDefinition, ToolName, ToolResult, format_agent_name
@@ -108,7 +109,9 @@ class ToolOrchestrator:
 
     async def prepare(self, agent: Agent) -> list[ToolEntry]:
         """Register tool definitions, MCP servers, and sub-agents for an agent run."""
-        mcp_servers = self._mcp_client.servers_for_agent(agent.mcp_servers)
+        tool_servers = [tool for tool in agent.tools if isinstance(tool, McpServer)]
+        other_tools = [tool for tool in agent.tools if not isinstance(tool, McpServer)]
+        mcp_servers = self._mcp_client.resolve_servers(tool_servers)
 
         entries: list[ToolEntry] = []
         for server in mcp_servers:
@@ -117,7 +120,7 @@ class ToolOrchestrator:
                 entry = ToolEntry(definition=definition)
                 entries.append(entry)
 
-        for tool in agent.tools:
+        for tool in other_tools:
             if isinstance(tool, Agent):
                 definition = self._agent_to_tool_definition(tool)
                 entry = ToolEntry(agent=tool, definition=definition)
