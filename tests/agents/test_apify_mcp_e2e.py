@@ -11,8 +11,8 @@ from typing import Any
 import pytest
 from dotenv import load_dotenv
 
-from agents.tools.mcp.apify import ApifyMcpServer
 from agents.tools.mcp.client_manager import McpClientManager
+from agents.tools.tools.servers import ApifyMcpServer
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 

@@ -45,7 +45,7 @@ class TestOpenAIToolSchema:
 
     def test_format_tool_keeps_strict_mode_for_pydantic_tools(self) -> None:
         """Built-in Pydantic-backed tools remain strict."""
-        from agents.tools.web_search import WebSearchDefinition
+        from agents.tools.tools.web_search import WebSearchDefinition
 
         adapter = OpenAIAdapter(client=object())  # type: ignore[arg-type]
 

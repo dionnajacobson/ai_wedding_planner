@@ -76,7 +76,7 @@ class AnthropicAdapter(LLMAdapter):
         else:
             input_schema = to_strict_json_schema(tool.params_model)
         tool_payload = {
-            "name": tool.name_formatted,
+            "name": tool.provider_name,
             "description": tool.description,
             "input_schema": input_schema,
         }

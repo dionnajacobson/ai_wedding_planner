@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from agents.agent import AgentRunner
 from api.routes import chat
 from db.database import init_db
 from observability.logging import configure_logging
@@ -15,10 +16,12 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize database tables when the application starts."""
+    """Build the shared agent runner and DB tables on startup; release MCP sessions on shutdown."""
     configure_logging()
     init_db()
+    app.state.agent_runner = AgentRunner.default()
     yield
+    await app.state.agent_runner.shutdown()
 
 
 def create_app() -> FastAPI:

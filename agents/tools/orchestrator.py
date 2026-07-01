@@ -8,14 +8,14 @@ import time
 from typing import Any
 
 from agents.agent.types import Agent, ToolEntry
-from agents.tools.agent_tool import AgentToolDefinition, AgentToolExecutor, AgentToolInput
-from agents.tools.days_until_date import DaysUntilDateExecutor
 from agents.tools.mcp.client_manager import McpClientManager
-from agents.tools.mcp.config import McpServer, ServerConfig
+from agents.tools.mcp.config import McpServer
 from agents.tools.mcp.tool import McpToolExecutor
 from agents.tools.protocols import ToolExecutor
-from agents.tools.types import ToolCall, ToolDefinition, ToolName, ToolResult, format_agent_name
-from agents.tools.web_search import WebSearchExecutor
+from agents.tools.tools.agent_tool import AgentToolDefinition, AgentToolExecutor, AgentToolInput
+from agents.tools.tools.days_until_date import DaysUntilDateExecutor
+from agents.tools.tools.web_search import WebSearchExecutor
+from agents.tools.types import ToolCall, ToolName, ToolResult, format_agent_name
 
 logger = logging.getLogger(__name__)
 
@@ -49,17 +49,21 @@ class ToolOrchestrator:
         self,
         tool_call: ToolCall,
         *,
-        agent: Agent | None = None,
+        entry: ToolEntry | None = None,
         runner: Any | None = None,
     ) -> ToolResult:
-        """Run one tool call and return its text result."""
-        if agent is not None:
-            executor = self._get_executor(ToolName.AGENT_AS_TOOL)
-        elif self._is_mcp_tool_name(tool_call.name):
-            executor = self._get_executor(ToolName.MCP)
-        else:
-            tool_name = ToolName(tool_call.name)
-            executor = self._get_executor(tool_name)
+        """Run one tool call and return its text result.
+
+        When `entry` is supplied (the normal path, via `execute_all` after
+        `prepare`), the tool name and agent are read directly off it. Without
+        an entry, the tool name is inferred from the provider-facing string,
+        which only resolves plain and MCP-prefixed names.
+        """
+        agent = entry.agent if entry is not None else None
+        tool_name = (
+            entry.definition.name if entry is not None else self._resolve_tool_name(tool_call.name)
+        )
+        executor = self._get_executor(tool_name)
 
         start = time.perf_counter()
         try:
@@ -95,14 +99,16 @@ class ToolOrchestrator:
         runner: Any | None = None,
     ) -> list[ToolResult]:
         """Run multiple tool calls concurrently."""
-        entry_by_name = {}
-        if entries is not None:
-            entry_by_name = {entry.definition.name_formatted: entry for entry in entries}
+        entry_by_name = {entry.definition.provider_name: entry for entry in entries or []}
 
-        tasks = [
-            self._execute_for_entry(tool_call, entry_by_name.get(tool_call.name), runner=runner)
-            for tool_call in tool_calls
-        ]
+        tasks = []
+        for tool_call in tool_calls:
+            entry = entry_by_name.get(tool_call.name)
+            if entry is None:
+                raise ValueError(f"Unknown tool: {tool_call.name}")
+            task = self.execute(tool_call, entry=entry, runner=runner)
+            tasks.append(task)
+
         results = await asyncio.gather(*tasks)
         result_list = list(results)
         return result_list
@@ -129,17 +135,9 @@ class ToolOrchestrator:
             entries.append(entry)
         return entries
 
-    async def _execute_for_entry(
-        self,
-        tool_call: ToolCall,
-        entry: ToolEntry | None,
-        *,
-        runner: Any | None = None,
-    ) -> ToolResult:
-        """Route a provider-facing tool name through prepared entries when available."""
-        agent = entry.agent if entry is not None else None
-        result = await self.execute(tool_call, agent=agent, runner=runner)
-        return result
+    async def shutdown(self) -> None:
+        """Close MCP sessions opened while preparing tool calls."""
+        await self._mcp_client.shutdown()
 
     def _agent_to_tool_definition(self, agent: Agent) -> AgentToolDefinition:
         """Serialize an agent into a schema-only tool definition for a parent agent."""
@@ -165,3 +163,10 @@ class ToolOrchestrator:
         prefix = f"{ToolName.MCP.value}_"
         is_mcp = name.startswith(prefix)
         return is_mcp
+
+    def _resolve_tool_name(self, name: str) -> ToolName:
+        """Infer a `ToolName` for a call made without a prepared entry."""
+        if self._is_mcp_tool_name(name):
+            return ToolName.MCP
+        tool_name = ToolName(name)
+        return tool_name

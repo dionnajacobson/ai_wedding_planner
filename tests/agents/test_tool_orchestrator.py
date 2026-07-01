@@ -9,12 +9,12 @@ from unittest.mock import AsyncMock
 from agents.agent import Agent, AgentToolInput
 from agents.client.types import Model
 from agents.prompts.base import JinjaPrompt
-from agents.tools.agent_tool import AgentToolDefinition
 from agents.tools.mcp.client_manager import McpClientManager
 from agents.tools.mcp.config import ServerConfig, StdioConfig
 from agents.tools.mcp.definitions import McpToolDefinition
 from agents.tools.mcp.tool import McpToolExecutor
 from agents.tools.orchestrator import ToolOrchestrator
+from agents.tools.tools.agent_tool import AgentToolDefinition
 from agents.tools.types import ToolCall, ToolName, format_agent_name
 from tests.agents.mock_data import DaysUntilDateDefinition, DaysUntilDateExecutor
 
@@ -62,7 +62,7 @@ class TestToolOrchestrator:
             assert definition.description == case["expected_description"]
             assert definition.params_model is AgentToolInput
             assert definition.agent_name == format_agent_name(agent.name)
-            assert definition.name_formatted == tool_name
+            assert definition.provider_name == tool_name
 
     def test_execute(self) -> None:
         """Run execute scenarios from the test table."""
@@ -124,7 +124,7 @@ class TestToolOrchestrator:
         entries = asyncio.run(orchestrator.prepare(agent))
 
         assert len(entries) == 2
-        assert entries[0].definition.name_formatted == "mcp_filesystem_read_file"
+        assert entries[0].definition.provider_name == "mcp_filesystem_read_file"
         assert entries[1].definition.name == ToolName.DAYS_UNTIL_DATE
         client.connect_server.assert_awaited_once_with(server)
 

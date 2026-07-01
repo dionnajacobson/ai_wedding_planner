@@ -43,7 +43,7 @@ def format_tool_descriptions(tools: list[ToolDefinition]) -> str:
 
     parts = ["<tools>"]
     for tool in tools:
-        name = escape(tool.name_formatted)
+        name = escape(tool.provider_name)
         description = escape(tool.description)
         parts.append(f'  <tool name="{name}">{description}</tool>')
     parts.append("</tools>")

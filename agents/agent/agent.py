@@ -59,6 +59,10 @@ class AgentRunner:
         result = self._build_result(response, tool_results, tool_rounds)
         return result
 
+    async def shutdown(self) -> None:
+        """Release resources (e.g. MCP sessions) held by the tool orchestrator."""
+        await self._tool_orchestrator.shutdown()
+
     def _invoke(
         self,
         agent: Agent,

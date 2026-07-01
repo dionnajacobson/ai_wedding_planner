@@ -4,7 +4,7 @@ import uuid
 from agents.agent import Agent, AgentRunner
 from agents.client.types import Model
 from agents.prompts.prompts import VendorSearchPromptJinja, WeddingPromptJinja
-from agents.tools.mcp.apify import ApifyMcpServer
+from agents.tools.tools.servers import ApifyMcpServer
 from observability.logging import log_context
 from services.message_service import MessageService
 from services.types import Message, MessageRole

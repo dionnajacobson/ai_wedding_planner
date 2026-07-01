@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 from contextlib import AsyncExitStack
-from dataclasses import dataclass
 from typing import Any
 
 import httpx
@@ -14,10 +13,11 @@ from mcp.client.sse import sse_client
 from mcp.client.stdio import StdioServerParameters, stdio_client
 from mcp.client.streamable_http import streamable_http_client
 from mcp.shared._httpx_utils import create_mcp_http_client
+from pydantic import BaseModel, ConfigDict
 
 from agents.tools.mcp.config import (
-    SSEConfig,
     ServerConfig,
+    SSEConfig,
     StdioConfig,
     StreamableHttpConfig,
 )
@@ -26,9 +26,10 @@ from agents.tools.mcp.definitions import McpToolDefinition
 logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
-class _McpToolRoute:
+class _McpToolRoute(BaseModel):
     """Route a provider-facing MCP tool name to a live session."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, frozen=True)
 
     session: ClientSession
     tool_name: str
@@ -44,11 +45,6 @@ class McpClientManager:
         self._server_tools: dict[str, list[McpToolDefinition]] = {}
         self._started = False
 
-    @classmethod
-    def default(cls) -> McpClientManager:
-        """Return the default MCP client manager."""
-        return cls()
-
     async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> str:
         """Invoke an MCP tool and return formatted text for the LLM."""
         route = self._routes.get(tool_name)
@@ -56,7 +52,8 @@ class McpClientManager:
             raise ValueError(f"Unknown MCP tool: {tool_name}")
 
         result = await route.session.call_tool(route.tool_name, arguments)
-        return self._format_call_tool_result(result)
+        content = self._format_call_tool_result(result)
+        return content
 
     async def connect_server(self, server: ServerConfig) -> list[McpToolDefinition]:
         """Connect to one MCP server and register its tools."""
@@ -74,12 +71,18 @@ class McpClientManager:
         )
         return definitions
 
+    @classmethod
+    def default(cls) -> McpClientManager:
+        """Return the default MCP client manager."""
+        return cls()
+
     def resolve_servers(
         self,
         tool_servers: tuple[ServerConfig, ...] | list[ServerConfig],
     ) -> tuple[ServerConfig, ...]:
         """Return MCP servers declared on an agent tool list."""
-        return tuple(tool_servers)
+        servers = tuple(tool_servers)
+        return servers
 
     async def shutdown(self) -> None:
         """Close all MCP sessions."""
@@ -93,13 +96,12 @@ class McpClientManager:
     async def _connect_to_server(self, server: ServerConfig) -> ClientSession:
         """Open a transport, initialize a session, and register native tool routes."""
         if server.type == "streamable_http":
-            return await self._open_streamable_http_session(server)
+            session = await self._open_streamable_http_session(server)
+            return session
 
         transport = self._open_transport(server)
         read_stream, write_stream = await self._exit_stack.enter_async_context(transport)
-        session_context = ClientSession(read_stream, write_stream)
-        session = await self._exit_stack.enter_async_context(session_context)
-        await session.initialize()
+        session = await self._start_session(read_stream, write_stream)
         return session
 
     async def _ensure_started(self) -> None:
@@ -122,31 +124,11 @@ class McpClientManager:
         text = "\n".join(part for part in parts if part)
         if result.isError:
             message = text or "MCP tool failed"
-            return f"Error: {message}"
+            error_text = f"Error: {message}"
+            return error_text
 
-        return text or "OK"
-
-    def _open_transport(self, server: ServerConfig):
-        """Return the async context manager for stdio or SSE transports."""
-        if server.type == "stdio":
-            stdio_config = server.config
-            if not isinstance(stdio_config, StdioConfig):
-                raise ValueError(f"MCP server '{server.name}' requires stdio config")
-            params = StdioServerParameters(
-                args=stdio_config.args,
-                command=stdio_config.command,
-                env=stdio_config.env,
-            )
-            return stdio_client(params)
-
-        sse_config = server.config
-        if not isinstance(sse_config, SSEConfig):
-            raise ValueError(f"MCP server '{server.name}' requires sse config")
-        return sse_client(
-            url=sse_config.url,
-            sse_read_timeout=sse_config.sse_read_timeout,
-            timeout=sse_config.timeout,
-        )
+        formatted_text = text or "OK"
+        return formatted_text
 
     async def _open_streamable_http_session(self, server: ServerConfig) -> ClientSession:
         """Connect to a remote MCP server over streamable HTTP."""
@@ -165,10 +147,32 @@ class McpClientManager:
             http_client=http_client,
         )
         read_stream, write_stream, _ = await self._exit_stack.enter_async_context(transport)
-        session_context = ClientSession(read_stream, write_stream)
-        session = await self._exit_stack.enter_async_context(session_context)
-        await session.initialize()
+        session = await self._start_session(read_stream, write_stream)
         return session
+
+    def _open_transport(self, server: ServerConfig):
+        """Return the async context manager for stdio or SSE transports."""
+        if server.type == "stdio":
+            stdio_config = server.config
+            if not isinstance(stdio_config, StdioConfig):
+                raise ValueError(f"MCP server '{server.name}' requires stdio config")
+            params = StdioServerParameters(
+                args=stdio_config.args,
+                command=stdio_config.command,
+                env=stdio_config.env,
+            )
+            transport = stdio_client(params)
+            return transport
+
+        sse_config = server.config
+        if not isinstance(sse_config, SSEConfig):
+            raise ValueError(f"MCP server '{server.name}' requires sse config")
+        transport = sse_client(
+            url=sse_config.url,
+            sse_read_timeout=sse_config.sse_read_timeout,
+            timeout=sse_config.timeout,
+        )
+        return transport
 
     def _register_tools(
         self,
@@ -179,14 +183,21 @@ class McpClientManager:
         """Register MCP tools under provider-safe prefixed names."""
         definitions: list[McpToolDefinition] = []
         for tool in tools:
-            formatted_name = McpToolDefinition.format_name(server.name, tool.name)
-            self._routes[formatted_name] = _McpToolRoute(session=session, tool_name=tool.name)
-            definitions.append(
-                McpToolDefinition(
-                    description=tool.description or f"MCP tool {tool.name} from {server.name}.",
-                    mcp_server_name=server.name,
-                    mcp_tool_name=tool.name,
-                    params_schema=tool.inputSchema,
-                )
+            definition = McpToolDefinition(
+                description=tool.description or f"MCP tool {tool.name} from {server.name}.",
+                mcp_server_name=server.name,
+                mcp_tool_name=tool.name,
+                params_schema=tool.inputSchema,
             )
+            self._routes[definition.provider_name] = _McpToolRoute(
+                session=session, tool_name=tool.name
+            )
+            definitions.append(definition)
         return definitions
+
+    async def _start_session(self, read_stream: Any, write_stream: Any) -> ClientSession:
+        """Wrap read/write streams in an initialized MCP client session."""
+        session_context = ClientSession(read_stream, write_stream)
+        session = await self._exit_stack.enter_async_context(session_context)
+        await session.initialize()
+        return session

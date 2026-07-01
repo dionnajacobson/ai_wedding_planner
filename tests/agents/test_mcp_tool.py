@@ -33,8 +33,13 @@ class TestMcpToolNaming:
         ]
 
         for case in test_cases:
-            formatted = McpToolDefinition.format_name(case["server_name"], case["tool_name"])
-            assert formatted == case["expected"]
+            definition = McpToolDefinition(
+                description="test",
+                mcp_server_name=case["server_name"],
+                mcp_tool_name=case["tool_name"],
+                params_schema={"type": "object"},
+            )
+            assert definition.provider_name == case["expected"]
 
 
 class TestMcpToolExecutor:
@@ -118,7 +123,7 @@ class TestMcpOrchestratorIntegration:
 
             # ASSERT
             assert len(entries) == 1
-            assert entries[0].definition.name_formatted == case["expected_tool_name"]
+            assert entries[0].definition.provider_name == case["expected_tool_name"]
             client.connect_server.assert_awaited_once_with(case["server"])
 
     def test_execute_routes_mcp_tool_names(self) -> None:

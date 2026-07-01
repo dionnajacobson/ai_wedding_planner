@@ -3,8 +3,8 @@
 from typing import Any
 
 from agents.tools.protocols import ToolExecutor
+from agents.tools.tools.web_search import WebSearchDefinition, WebSearchExecutor
 from agents.tools.types import ToolName
-from agents.tools.web_search import WebSearchDefinition, WebSearchExecutor
 from tests.agents.mock_data import DaysUntilDateDefinition, DaysUntilDateExecutor
 
 

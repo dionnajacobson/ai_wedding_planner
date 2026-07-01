@@ -9,8 +9,8 @@ import pytest
 from dotenv import load_dotenv
 
 from agents.tools.orchestrator import ToolOrchestrator
+from agents.tools.tools.web_search import WebSearchExecutor
 from agents.tools.types import ToolCall, ToolName
-from agents.tools.web_search import WebSearchExecutor
 
 load_dotenv()
 

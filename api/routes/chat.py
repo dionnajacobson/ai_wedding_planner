@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from agents.agent import AgentRunner
 from agents.client.errors import LLMAuthError, LLMError, LLMRateLimitError
 from agents.wedding_agent import WeddingAgent
+from api.dependencies import get_agent_runner
 from api.schemas import (
     ChatRequest,
     ChatResponse,
@@ -50,7 +51,11 @@ def start_chat(body: StartChatRequest, db: Session = Depends(get_db)) -> StartCh
 
 
 @router.post("/api/chat", response_model=ChatResponse)
-async def send_message(body: ChatRequest, db: Session = Depends(get_db)) -> ChatResponse:
+async def send_message(
+    body: ChatRequest,
+    db: Session = Depends(get_db),
+    runner: AgentRunner = Depends(get_agent_runner),
+) -> ChatResponse:
     """Send a message and receive the assistant reply."""
     client_store = ClientStore(db_session=db)
     wedding_store = WeddingStore(db_session=db, client_store=client_store)
@@ -60,7 +65,7 @@ async def send_message(body: ChatRequest, db: Session = Depends(get_db)) -> Chat
     wedding_service = WeddingService(client_service=client_service, wedding_store=wedding_store)
     agent = WeddingAgent(
         message_service=message_service,
-        runner=AgentRunner.default(),
+        runner=runner,
         wedding_service=wedding_service,
     )
 

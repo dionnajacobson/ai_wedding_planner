@@ -36,7 +36,7 @@ class ToolDefinition(BaseModel):
     params_schema: dict[str, Any] | None = None
 
     @property
-    def name_formatted(self) -> str:
+    def provider_name(self) -> str:
         """Return the provider-facing tool name."""
         return self.name.value
 

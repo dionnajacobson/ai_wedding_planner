@@ -75,7 +75,7 @@ class OpenAIAdapter(LLMAdapter):
             strict = True
         tool_payload = {
             "type": "function",
-            "name": tool.name_formatted,
+            "name": tool.provider_name,
             "description": tool.description,
             "parameters": parameters,
             "strict": strict,

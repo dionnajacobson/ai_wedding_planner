@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from agents.prompts.base import JinjaPrompt
 from agents.prompts.prompts import WeddingPromptJinja
+from agents.tools.tools.web_search import WebSearchDefinition
 from agents.tools.types import ToolResult
-from agents.tools.web_search import WebSearchDefinition
 from services.types import MessageRole
 from tests.services.mock_data import mock_message
 

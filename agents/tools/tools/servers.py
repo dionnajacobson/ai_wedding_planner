@@ -1,4 +1,4 @@
-"""Apify MCP server for wedding vendor search."""
+"""MCP server definitions available to agents."""
 
 from __future__ import annotations
 

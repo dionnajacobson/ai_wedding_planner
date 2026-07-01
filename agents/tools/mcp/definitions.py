@@ -15,14 +15,10 @@ class McpToolDefinition(ToolDefinition):
     name: ToolName = ToolName.MCP
     params_model: None = Field(default=None, exclude=True)
 
-    @staticmethod
-    def format_name(server_name: str, tool_name: str) -> str:
-        """Build a provider-safe tool name for an MCP tool."""
-        server_slug = format_agent_name(server_name)
-        tool_slug = format_agent_name(tool_name)
-        return f"{ToolName.MCP.value}_{server_slug}_{tool_slug}"
-
     @property
-    def name_formatted(self) -> str:
+    def provider_name(self) -> str:
         """Return the provider-facing MCP tool name."""
-        return self.format_name(self.mcp_server_name, self.mcp_tool_name)
+        server_slug = format_agent_name(self.mcp_server_name)
+        tool_slug = format_agent_name(self.mcp_tool_name)
+        formatted_name = f"{ToolName.MCP.value}_{server_slug}_{tool_slug}"
+        return formatted_name

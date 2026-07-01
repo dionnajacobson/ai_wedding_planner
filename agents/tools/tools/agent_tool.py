@@ -26,9 +26,10 @@ class AgentToolDefinition(ToolDefinition):
     agent_name: str
 
     @property
-    def name_formatted(self) -> str:
+    def provider_name(self) -> str:
         """Return the provider-facing tool name."""
-        return f"{self.name.value}_{self.agent_name}"
+        provider_name = f"{self.name.value}_{self.agent_name}"
+        return provider_name
 
 
 class AgentToolExecutor(ToolExecutor):
