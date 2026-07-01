@@ -2,7 +2,15 @@ import uuid
 from datetime import date
 
 from db.models import BudgetCategory, MessageRole, VendorCategory, VendorStatus
-from services.types import BudgetItem, Client, Message, Wedding, WeddingBudget, WeddingVendor
+from services.types import (
+    BudgetItem,
+    Client,
+    Message,
+    VenueCandidate,
+    Wedding,
+    WeddingBudget,
+    WeddingVendor,
+)
 
 CLIENT_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
 WEDDING_ID = uuid.UUID("22222222-2222-2222-2222-222222222222")
@@ -79,6 +87,19 @@ def mock_vendor(
         status=status,
     )
     return vendor
+
+
+def mock_venue_candidate(
+    *,
+    category: VendorCategory = VendorCategory.PHOTOGRAPHY,
+    name: str = "Lens & Light Studio",
+) -> VenueCandidate:
+    """Build a vendor candidate for service tests."""
+    candidate = VenueCandidate(
+        category=category,
+        name=name,
+    )
+    return candidate
 
 
 def mock_wedding(

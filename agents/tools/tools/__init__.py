@@ -2,6 +2,7 @@
 
 from agents.tools.tools.agent_tool import AgentToolDefinition, AgentToolExecutor, AgentToolInput
 from agents.tools.tools.days_until_date import DaysUntilDateDefinition, DaysUntilDateExecutor
+from agents.tools.tools.save_vendor import SaveVendorDefinition, SaveVendorExecutor
 from agents.tools.tools.servers import ApifyMcpServer
 from agents.tools.tools.web_search import WebSearchDefinition, WebSearchExecutor
 
@@ -12,6 +13,8 @@ __all__ = [
     "ApifyMcpServer",
     "DaysUntilDateDefinition",
     "DaysUntilDateExecutor",
+    "SaveVendorDefinition",
+    "SaveVendorExecutor",
     "WebSearchDefinition",
     "WebSearchExecutor",
 ]

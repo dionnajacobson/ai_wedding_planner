@@ -8,8 +8,9 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from dotenv import load_dotenv
 
+from agents.agent.types import ToolEntry
 from agents.tools.orchestrator import ToolOrchestrator
-from agents.tools.tools.web_search import WebSearchExecutor
+from agents.tools.tools.web_search import WebSearchDefinition, WebSearchExecutor
 from agents.tools.types import ToolCall, ToolName
 
 load_dotenv()
@@ -113,9 +114,12 @@ class TestWebSearchTool:
             orchestrator = ToolOrchestrator(
                 {ToolName.WEB_SEARCH: WebSearchExecutor(client=client)},
             )
+            entry = ToolEntry(definition=WebSearchDefinition())
 
             # ACT
-            result = asyncio.run(orchestrator.execute(case["tool_call"]))
+            result = asyncio.run(
+                orchestrator.execute(case["tool_call"], tool_entry=entry, runner=None),
+            )
 
             # ASSERT
             assert result.tool_call_id == case["expected_tool_call_id"]

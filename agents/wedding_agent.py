@@ -4,6 +4,7 @@ import uuid
 from agents.agent import Agent, AgentRunner
 from agents.client.types import Model
 from agents.prompts.prompts import VendorSearchPromptJinja, WeddingPromptJinja
+from agents.tools.tools.save_vendor import SaveVendorDefinition
 from agents.tools.tools.servers import ApifyMcpServer
 from observability.logging import log_context
 from services.message_service import MessageService
@@ -42,7 +43,7 @@ class WeddingAgent:
                 name="vendor_search",
                 agent_description="Helps find vendors for the wedding.",
                 model=Model.GPT_4O_MINI_2024_07_18,
-                tools=[ApifyMcpServer],
+                tools=[ApifyMcpServer, SaveVendorDefinition(session_id=session_id)],
                 prompt=VendorSearchPromptJinja(query=query, history=history),
             )
             agent = Agent(

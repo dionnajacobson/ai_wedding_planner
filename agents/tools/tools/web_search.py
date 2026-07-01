@@ -12,7 +12,7 @@ from agents.tools.protocols import ToolExecutor
 from agents.tools.types import ToolCall, ToolDefinition, ToolName, ToolResult
 
 if TYPE_CHECKING:
-    from agents.agent.types import Agent
+    from agents.agent.types import ToolEntry
 
 
 class WebSearchInput(BaseModel):
@@ -42,9 +42,8 @@ class WebSearchExecutor(ToolExecutor):
     async def execute(
         self,
         tool_call: ToolCall,
-        *,
-        agent: Agent | None = None,
-        runner: Any | None = None,
+        tool_entry: ToolEntry,
+        runner: Any,
     ) -> ToolResult:
         """Run a Tavily search for the requested query."""
         search_input = WebSearchInput.model_validate(tool_call.arguments)

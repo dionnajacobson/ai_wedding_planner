@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session, selectinload
 from db import models as db
 from db.database import SessionLocal
 from services.stores.client_store import ClientStore
-from services.types import BudgetItem, Wedding, WeddingBudget, WeddingVendor
+from services.types import BudgetItem, VenueCandidate, Wedding, WeddingBudget, WeddingVendor
 
 
 class WeddingStore:
@@ -37,6 +37,27 @@ class WeddingStore:
         self._db.commit()
         self._db.refresh(record)
         return record.id
+
+    def create_vendor(
+        self,
+        wedding_id: uuid.UUID,
+        candidate: VenueCandidate,
+    ) -> WeddingVendor:
+        """Insert a vendor row from a candidate with status 'to_contact'."""
+        record = db.WeddingVendor(
+            category=candidate.category,
+            contact_info=candidate.contact_info,
+            estimated_cost=candidate.estimated_cost,
+            name=candidate.name,
+            notes=candidate.notes,
+            status=db.VendorStatus.TO_CONTACT,
+            wedding_id=wedding_id,
+        )
+        self._db.add(record)
+        self._db.commit()
+        self._db.refresh(record)
+        vendor = self._to_vendor(record)
+        return vendor
 
     def create_wedding(
         self,

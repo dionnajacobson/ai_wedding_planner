@@ -6,7 +6,7 @@ import asyncio
 from typing import Any
 from unittest.mock import AsyncMock
 
-from agents.agent import Agent, AgentToolInput
+from agents.agent import Agent, AgentToolInput, ToolEntry
 from agents.client.types import Model
 from agents.prompts.base import JinjaPrompt
 from agents.tools.mcp.client_manager import McpClientManager
@@ -85,9 +85,12 @@ class TestToolOrchestrator:
             orchestrator = ToolOrchestrator(
                 executors={ToolName.DAYS_UNTIL_DATE: case["executor"]},
             )
+            entry = ToolEntry(definition=DaysUntilDateDefinition())
 
             # ACT
-            result = asyncio.run(orchestrator.execute(case["tool_call"]))
+            result = asyncio.run(
+                orchestrator.execute(case["tool_call"], tool_entry=entry, runner=None),
+            )
 
             # ASSERT
             assert result.tool_call_id == case["expected_tool_call_id"]
@@ -130,26 +133,25 @@ class TestToolOrchestrator:
 
     def test_prepare(self) -> None:
         """Run prepare scenarios from the test table."""
+        sub_agent = Agent(
+            name="Researcher",
+            model=Model.GPT_4O_MINI_2024_07_18,
+            prompt=_TaskPrompt(),
+        )
         test_cases: list[dict[str, Any]] = [
             {
-                "name": "wraps_tool_definitions",
+                "name": "wraps_tool_definitions_with_no_child_agent",
                 "tools": [DaysUntilDateDefinition()],
                 "expected_entry_count": 1,
-                "expected_agent_count": 0,
                 "expected_tool_name": ToolName.DAYS_UNTIL_DATE,
+                "expected_entry_agent": None,
             },
             {
-                "name": "wraps_sub_agents",
-                "tools": [
-                    Agent(
-                        name="Researcher",
-                        model=Model.GPT_4O_MINI_2024_07_18,
-                        prompt=_TaskPrompt(),
-                    ),
-                ],
+                "name": "wraps_sub_agents_with_the_child_agent",
+                "tools": [sub_agent],
                 "expected_entry_count": 1,
-                "expected_agent_count": 1,
                 "expected_tool_name": ToolName.AGENT_AS_TOOL,
+                "expected_entry_agent": sub_agent,
             },
         ]
 
@@ -165,5 +167,5 @@ class TestToolOrchestrator:
             entries = asyncio.run(orchestrator.prepare(agent))
 
             assert len(entries) == case["expected_entry_count"]
-            assert sum(entry.agent is not None for entry in entries) == case["expected_agent_count"]
             assert entries[0].definition.name == case["expected_tool_name"]
+            assert entries[0].agent is case["expected_entry_agent"]

@@ -9,7 +9,7 @@ from agents.tools.protocols import ToolExecutor
 from agents.tools.types import ToolCall, ToolResult
 
 if TYPE_CHECKING:
-    from agents.agent.types import Agent
+    from agents.agent.types import ToolEntry
 
 
 class McpToolExecutor(ToolExecutor):
@@ -22,9 +22,8 @@ class McpToolExecutor(ToolExecutor):
     async def execute(
         self,
         tool_call: ToolCall,
-        *,
-        agent: Agent | None = None,
-        runner: Any | None = None,
+        tool_entry: ToolEntry,
+        runner: Any,
     ) -> ToolResult:
         """Call the mapped MCP tool and return its text output."""
         content = await self._client.call_tool(tool_call.name, tool_call.arguments)

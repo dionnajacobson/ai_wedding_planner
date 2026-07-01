@@ -11,7 +11,7 @@ from agents.tools.protocols import ToolExecutor
 from agents.tools.types import ToolCall, ToolDefinition, ToolName, ToolResult
 
 if TYPE_CHECKING:
-    from agents.agent.types import Agent
+    from agents.agent.types import ToolEntry
 
 
 class DaysUntilDateInput(BaseModel):
@@ -34,9 +34,8 @@ class DaysUntilDateExecutor(ToolExecutor):
     async def execute(
         self,
         tool_call: ToolCall,
-        *,
-        agent: Agent | None = None,
-        runner: Any | None = None,
+        tool_entry: ToolEntry,
+        runner: Any,
     ) -> ToolResult:
         """Return the number of days from today until the given date."""
         params = DaysUntilDateInput.model_validate(tool_call.arguments)

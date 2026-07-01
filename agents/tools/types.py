@@ -22,6 +22,7 @@ class ToolName(StrEnum):
     AGENT_AS_TOOL = "agent_as_tool"
     DAYS_UNTIL_DATE = "days_until_date"
     MCP = "mcp"
+    SAVE_VENDOR = "save_vendor"
     WEB_SEARCH = "web_search"
 
 

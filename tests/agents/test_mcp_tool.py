@@ -9,11 +9,12 @@ from unittest.mock import AsyncMock
 import mcp.types as mcp_types
 
 from agents.agent import Agent
+from agents.agent.types import ToolEntry
 from agents.client.types import Model
 from agents.prompts.prompts import VendorSearchPromptJinja
 from agents.tools.mcp import McpClientManager, McpToolDefinition, McpToolExecutor
-from agents.tools.mcp.config import ServerConfig, StdioConfig
 from agents.tools.mcp.client_manager import McpClientManager as ClientManagerClass
+from agents.tools.mcp.config import ServerConfig, StdioConfig
 from agents.tools.orchestrator import ToolOrchestrator
 from agents.tools.types import ToolCall, ToolName
 
@@ -66,9 +67,17 @@ class TestMcpToolExecutor:
                 id="call_1",
                 name=case["tool_name"],
             )
+            entry = ToolEntry(
+                definition=McpToolDefinition(
+                    description="test",
+                    mcp_server_name="filesystem",
+                    mcp_tool_name="read_file",
+                    params_schema={"type": "object"},
+                ),
+            )
 
             # ACT
-            result = asyncio.run(executor.execute(tool_call))
+            result = asyncio.run(executor.execute(tool_call, tool_entry=entry, runner=None))
 
             # ASSERT
             assert result.tool_call_id == "call_1"
@@ -149,9 +158,19 @@ class TestMcpOrchestratorIntegration:
                 id="call_2",
                 name=case["tool_name"],
             )
+            entry = ToolEntry(
+                definition=McpToolDefinition(
+                    description="test",
+                    mcp_server_name="filesystem",
+                    mcp_tool_name="read_file",
+                    params_schema={"type": "object"},
+                ),
+            )
 
             # ACT
-            result = asyncio.run(orchestrator.execute(tool_call))
+            result = asyncio.run(
+                orchestrator.execute(tool_call, tool_entry=entry, runner=None),
+            )
 
             # ASSERT
             assert result.content == case["expected_content"]

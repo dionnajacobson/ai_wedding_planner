@@ -56,6 +56,7 @@ class VendorStatus(StrEnum):
     CONTACTED = "contacted"
     DECLINED = "declined"
     RESEARCHING = "researching"
+    TO_CONTACT = "to_contact"
 
 
 class Base(DeclarativeBase):

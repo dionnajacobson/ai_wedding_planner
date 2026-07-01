@@ -37,6 +37,16 @@ class Message(BaseModel):
     role: MessageRole
 
 
+class VenueCandidate(BaseModel):
+    """A vendor candidate to save — bring-your-own or found via vendor search."""
+
+    category: VendorCategory
+    contact_info: str | None = None
+    estimated_cost: float | None = None
+    name: str
+    notes: str | None = None
+
+
 class WeddingBudget(BaseModel):
     """Budget totals and line items for display in chat."""
 

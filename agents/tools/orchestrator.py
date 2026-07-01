@@ -14,6 +14,7 @@ from agents.tools.mcp.tool import McpToolExecutor
 from agents.tools.protocols import ToolExecutor
 from agents.tools.tools.agent_tool import AgentToolDefinition, AgentToolExecutor, AgentToolInput
 from agents.tools.tools.days_until_date import DaysUntilDateExecutor
+from agents.tools.tools.save_vendor import SaveVendorExecutor
 from agents.tools.tools.web_search import WebSearchExecutor
 from agents.tools.types import ToolCall, ToolName, ToolResult, format_agent_name
 
@@ -40,6 +41,7 @@ class ToolOrchestrator:
             ToolName.AGENT_AS_TOOL: AgentToolExecutor(),
             ToolName.DAYS_UNTIL_DATE: DaysUntilDateExecutor(),
             ToolName.MCP: McpToolExecutor(client=mcp_client),
+            ToolName.SAVE_VENDOR: SaveVendorExecutor(),
             ToolName.WEB_SEARCH: WebSearchExecutor(),
         }
         orchestrator = ToolOrchestrator(executors=executors, mcp_client=mcp_client)
@@ -48,26 +50,23 @@ class ToolOrchestrator:
     async def execute(
         self,
         tool_call: ToolCall,
-        *,
-        entry: ToolEntry | None = None,
-        runner: Any | None = None,
+        tool_entry: ToolEntry,
+        runner: Any,
     ) -> ToolResult:
         """Run one tool call and return its text result.
 
-        When `entry` is supplied (the normal path, via `execute_all` after
-        `prepare`), the tool name and agent are read directly off it. Without
-        an entry, the tool name is inferred from the provider-facing string,
-        which only resolves plain and MCP-prefixed names.
+        `tool_entry` (built by `prepare()`) supplies the tool name and is
+        passed whole to the executor, so a `ToolDefinition` subclass can carry
+        whatever request-scoped values it needs (e.g.
+        `SaveVendorDefinition.session_id`), since it's rebuilt fresh per call
+        rather than shared like the executor.
         """
-        agent = entry.agent if entry is not None else None
-        tool_name = (
-            entry.definition.name if entry is not None else self._resolve_tool_name(tool_call.name)
-        )
+        tool_name = tool_entry.definition.name
         executor = self._get_executor(tool_name)
 
         start = time.perf_counter()
         try:
-            result = await executor.execute(tool_call, agent=agent, runner=runner)
+            result = await executor.execute(tool_call, tool_entry=tool_entry, runner=runner)
         except Exception:
             duration_ms = round((time.perf_counter() - start) * 1000, 2)
             logger.exception(
@@ -106,7 +105,7 @@ class ToolOrchestrator:
             entry = entry_by_name.get(tool_call.name)
             if entry is None:
                 raise ValueError(f"Unknown tool: {tool_call.name}")
-            task = self.execute(tool_call, entry=entry, runner=runner)
+            task = self.execute(tool_call, tool_entry=entry, runner=runner)
             tasks.append(task)
 
         results = await asyncio.gather(*tasks)
@@ -156,17 +155,3 @@ class ToolOrchestrator:
         if executor is None:
             raise ValueError(f"Unknown tool: {tool_name.value}")
         return executor
-
-    @staticmethod
-    def _is_mcp_tool_name(name: str) -> bool:
-        """Return whether a provider-facing name belongs to an MCP tool."""
-        prefix = f"{ToolName.MCP.value}_"
-        is_mcp = name.startswith(prefix)
-        return is_mcp
-
-    def _resolve_tool_name(self, name: str) -> ToolName:
-        """Infer a `ToolName` for a call made without a prepared entry."""
-        if self._is_mcp_tool_name(name):
-            return ToolName.MCP
-        tool_name = ToolName(name)
-        return tool_name

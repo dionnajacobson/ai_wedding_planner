@@ -5,11 +5,49 @@ import pytest
 
 from services.client_service import ClientService
 from services.wedding_service import WeddingService
-from tests.services.mock_data import CLIENT_ID, SESSION_ID, mock_client, mock_wedding
+from tests.services.mock_data import (
+    CLIENT_ID,
+    SESSION_ID,
+    WEDDING_ID,
+    mock_client,
+    mock_vendor,
+    mock_venue_candidate,
+    mock_wedding,
+)
 
 
 class TestWeddingService:
     """Table-driven tests for WeddingService."""
+
+    def test_add_vendor(self) -> None:
+        """Run add-vendor scenarios from the test table."""
+        test_cases: list[dict[str, Any]] = [
+            {
+                "name": "saves_candidate_and_returns_vendor",
+                "candidate": mock_venue_candidate(),
+                "returned_vendor": mock_vendor(),
+            },
+        ]
+
+        for case in test_cases:
+            # ARRANGE
+            client_service = Mock(spec=ClientService)
+            wedding_store = Mock()
+            wedding_store.create_vendor.return_value = case["returned_vendor"]
+            service = WeddingService(
+                client_service=client_service,
+                wedding_store=wedding_store,
+            )
+
+            # ACT
+            result = service.add_vendor(wedding_id=WEDDING_ID, candidate=case["candidate"])
+
+            # ASSERT
+            assert result == case["returned_vendor"]
+            wedding_store.create_vendor.assert_called_once_with(
+                wedding_id=WEDDING_ID,
+                candidate=case["candidate"],
+            )
 
     def test_create_session(self) -> None:
         """Run create-session scenarios from the test table."""

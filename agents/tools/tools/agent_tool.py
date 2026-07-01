@@ -11,7 +11,7 @@ from agents.tools.types import ToolCall, ToolDefinition, ToolResult
 
 if TYPE_CHECKING:
     from agents.agent.agent import AgentRunner
-    from agents.agent.types import Agent
+    from agents.agent.types import ToolEntry
 
 
 class AgentToolInput(BaseModel):
@@ -42,11 +42,11 @@ class AgentToolExecutor(ToolExecutor):
     async def execute(
         self,
         tool_call: ToolCall,
-        *,
-        agent: Agent | None = None,
-        runner: AgentRunner | None = None,
+        tool_entry: ToolEntry,
+        runner: AgentRunner,
     ) -> ToolResult:
         """Validate input, update the agent prompt, run it, and return its reply."""
+        agent = tool_entry.agent
         active_runner = self._runner or runner
         if agent is None or active_runner is None:
             raise ValueError("Agent tool calls require an agent and runner.")

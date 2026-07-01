@@ -2,7 +2,7 @@ import uuid
 
 from services.client_service import ClientService
 from services.stores.wedding_store import WeddingStore
-from services.types import Client, Wedding
+from services.types import Client, VenueCandidate, Wedding, WeddingVendor
 
 
 class WeddingService:
@@ -27,6 +27,15 @@ class WeddingService:
             wedding_store=wedding_store,
         )
         return wedding_service
+
+    def add_vendor(
+        self,
+        wedding_id: uuid.UUID,
+        candidate: VenueCandidate,
+    ) -> WeddingVendor:
+        """Save a vendor candidate — BYO or from discovery — with status 'to_contact'."""
+        vendor = self._wedding_store.create_vendor(wedding_id=wedding_id, candidate=candidate)
+        return vendor
 
     def create_session(
         self,

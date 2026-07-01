@@ -13,6 +13,7 @@ from agents.tools.mcp import McpToolExecutor
 from agents.tools.orchestrator import ToolOrchestrator
 from agents.tools.protocols import ToolExecutor
 from agents.tools.tools.agent_tool import AgentToolExecutor
+from agents.tools.tools.save_vendor import SaveVendorExecutor
 from agents.tools.types import ToolCall, ToolName, format_agent_name
 
 
@@ -106,7 +107,9 @@ class TestAgentAsTool:
         web_search = orchestrator._get_executor(ToolName.WEB_SEARCH)
         agent_tool = orchestrator._get_executor(ToolName.AGENT_AS_TOOL)
         mcp_tool = orchestrator._get_executor(ToolName.MCP)
+        save_vendor = orchestrator._get_executor(ToolName.SAVE_VENDOR)
 
         assert web_search is not None
         assert isinstance(agent_tool, AgentToolExecutor)
         assert isinstance(mcp_tool, McpToolExecutor)
+        assert isinstance(save_vendor, SaveVendorExecutor)
